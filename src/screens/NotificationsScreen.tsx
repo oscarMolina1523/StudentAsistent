@@ -10,12 +10,13 @@ const NotificationsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Notifications</Text>
       <FlatList
         data={notifications}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <Text style={styles.notification}>{item.message}</Text>
+          <View style={styles.notificationContainer}>
+            <Text style={styles.notification}>{item.message}</Text>
+          </View>
         )}
       />
     </View>
@@ -34,9 +35,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  notificationContainer: {
+    backgroundColor: '#ffffff',
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   notification: {
     fontSize: 16,
-    marginBottom: 10,
+    color: '#333',
   },
 });
 

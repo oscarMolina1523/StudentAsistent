@@ -69,21 +69,21 @@ const Navigation = () => {
           name="StudentDetailsScreen"
           component={StudentDetailsScreen}
           options={{
-            title: 'Student Details',
+            title: 'Detalles de Grado',
           }}
         />
         <Stack.Screen
           name="Profile"
           component={ProfileScreen}
           options={{
-            title: 'Profile',
+            title: 'Mi Perfil',
           }}
         />
         <Stack.Screen
           name="Notifications"
           component={NotificationsScreen}
           options={{
-            title: 'Notifications',
+            title: 'Notificaciones',
           }}
         />
       </Stack.Navigator>
