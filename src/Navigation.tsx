@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -46,6 +46,16 @@ const Navigation = () => {
               <TouchableOpacity onPress={() => alert("Menú abierto")}>
                 <Ionicons name="menu" size={28} color="black" />
               </TouchableOpacity>
+            ),
+            headerRight: () => (
+              <View style={{ flexDirection: "row", gap: 15, marginRight: 10 }}>
+                <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                  <Ionicons name="notifications" size={28} color="black" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+                  <Ionicons name="person-circle-outline" size={28} color="black" />
+                </TouchableOpacity>
+              </View>
             ),
           })} 
         />
