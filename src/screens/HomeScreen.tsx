@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Navigation';
+import { Ionicons } from '@expo/vector-icons';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -23,12 +24,20 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
           <TouchableOpacity
             key={grade.id}
             style={styles.gradeCard}
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('StudentDetailsScreen', { gradeId: grade.id })}
           >
             <Image source={grade.image} style={styles.gradeImage} />
             <Text style={styles.gradeText}>{grade.name}</Text>
           </TouchableOpacity>
         ))}
+      </View>
+      <View style={styles.iconsContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <Ionicons name="notifications" size={28} color="black" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <Ionicons name="person-circle-outline" size={28} color="black" />
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -74,6 +83,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  iconsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
   },
 });
 
