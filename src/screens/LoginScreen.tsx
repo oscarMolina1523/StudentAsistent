@@ -1,18 +1,37 @@
-import React from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from '../Navigation';
+import { RootStackParamList } from "../Navigation";
 
 const LoginScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" />
+      <Text style={styles.title}>Iniciar Sesion</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        keyboardType="email-address"
+      />
       <TextInput style={styles.input} placeholder="Password" secureTextEntry />
-      <Button title="Login" onPress={() => navigation.navigate('Home')} />
-      <Button title="Register" onPress={() => navigation.navigate('Register')} />
+      <Button
+        title="Iniciar Sesion"
+        onPress={() => navigation.navigate("Home")}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          marginVertical: 10,
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        <Text >¿No tienes una cuenta?</Text>
+        <Text style={{ color: "blue" }} onPress={() => navigation.navigate("Register")}>Registrarse</Text>
+      </View>
     </View>
   );
 };
@@ -20,19 +39,20 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
+    gap: 10,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: 'center',
-    color: '#333',
+    textAlign: "center",
+    color: "#333",
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
     marginBottom: 15,
