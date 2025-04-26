@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 
 const NotificationsScreen = () => {
   const notifications = [
-    { id: 1, message: 'Juan Perez was absent on 2023-10-01' },
-    { id: 2, message: 'Maria Lopez was absent on 2023-10-02' },
-    { id: 3, message: 'Carlos Sanchez was absent on 2023-10-03' },
+    { id: 1, message: 'Juan Perez no asistio el 2023-10-01' },
+    { id: 2, message: 'Maria Lopez no asistio el 2023-10-02' },
+    { id: 3, message: 'Carlos Sanchez no asistio el 2023-10-03' },
   ];
 
   return (
