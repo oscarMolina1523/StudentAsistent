@@ -9,7 +9,7 @@ const LoginScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Iniciar Sesion</Text>
+      <Text style={styles.title}>Iniciar Sesion con cuenta</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
