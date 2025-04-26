@@ -1,12 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { getNotifications } from '../services/notificationService';
 
 const NotificationsScreen = () => {
-  const notifications = [
-    { id: 1, message: 'Juan Perez no asistio el 2023-10-01' },
-    { id: 2, message: 'Maria Lopez no asistio el 2023-10-02' },
-    { id: 3, message: 'Carlos Sanchez no asistio el 2023-10-03' },
-  ];
+  const notifications = getNotifications();
 
   return (
     <View style={styles.container}>

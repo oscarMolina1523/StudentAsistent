@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { getStudentsByGrade } from '../services/studentService';
+import { markAttendance } from '../services/attendanceService';
+import { addNotification } from '../services/notificationService';
 
 type Student = { id: number; name: string; status?: string };
-type StaticData = { [key: number]: Student[] };
 
 const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: number } } }) => {
   const { gradeId } = route.params;
@@ -10,25 +12,23 @@ const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: number } 
   const [students, setStudents] = useState<Student[]>([]);
 
   useEffect(() => {
-    // Static data for students
-    const staticData: StaticData = {
-      1: [{ id: 1, name: 'Juan Perez' }, { id: 2, name: 'Maria Lopez' }],
-      2: [{ id: 3, name: 'Carlos Sanchez' }, { id: 4, name: 'Ana Torres' }],
-      3: [{ id: 5, name: 'Luis Gomez' }, { id: 6, name: 'Sofia Ramirez' }],
-      4: [{ id: 7, name: 'Pedro Diaz' }, { id: 8, name: 'Lucia Fernandez' }],
-      5: [{ id: 9, name: 'Jorge Martinez' }, { id: 10, name: 'Elena Suarez' }],
-      6: [{ id: 11, name: 'Diego Castro' }, { id: 12, name: 'Valeria Morales' }],
-    };
-
-    setStudents(staticData[gradeId] || []);
+    const studentsData = getStudentsByGrade(gradeId);
+    setStudents(studentsData);
   }, [gradeId]);
 
-  const handleStatusChange = (studentId: number, status: string) => {
+  const handleStatusChange = async (studentId: number, status: string) => {
+    await markAttendance(studentId, status);
     setStudents((prevStudents) =>
       prevStudents.map((student) =>
         student.id === studentId ? { ...student, status } : student
       )
     );
+    if (status === 'Ausente') {
+      const student = students.find((s) => s.id === studentId);
+      if (student) {
+        addNotification(`${student.name} fue marcado como ausente.`);
+      }
+    }
   };
 
   const imageUrls = {
