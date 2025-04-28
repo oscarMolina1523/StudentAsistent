@@ -26,6 +26,9 @@ const Navigation = () => {
       <Stack.Navigator
         screenOptions={{
           headerTitleAlign: 'center',
+          headerStyle: { backgroundColor: "#00ba8b" }, // Cambia el color del header
+          headerTintColor: "#fff", // Color del texto e íconos
+          headerTitleStyle: { fontWeight: "bold" }, // Estilos del título
         }}
         initialRouteName="Login"
       >
@@ -50,16 +53,16 @@ const Navigation = () => {
             title: 'Home',
             headerLeft: () => (
               <TouchableOpacity onPress={() => alert('Menu opened')}>
-                <Ionicons name="menu" size={28} color="black" />
+                <Ionicons name="menu" size={28} color="white" />
               </TouchableOpacity>
             ),
             headerRight: () => (
               <View style={{ flexDirection: 'row', gap: 15, marginRight: 10 }}>
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-                  <Ionicons name="notifications" size={28} color="black" />
+                  <Ionicons name="notifications" size={28} color="white" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                  <Ionicons name="person-circle-outline" size={28} color="black" />
+                  <Ionicons name="person-circle-outline" size={28} color="white" />
                 </TouchableOpacity>
               </View>
             ),

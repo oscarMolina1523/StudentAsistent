@@ -4,7 +4,7 @@ import { View, Text, TextInput, Button, StyleSheet, ImageBackground, TouchableOp
 const RegisterScreen = ({ navigation }: any) => {
   return (
     <ImageBackground
-      source={{ uri: "https://img.freepik.com/foto-gratis/caja-kraft-azul-lindo-empaque-producto-patron-arcilla_53876-125920.jpg?t=st=1745698490~exp=1745702090~hmac=d3c0162afd101511be4de8e2707db9fe4122eb2e28b5376f0b99b1b70847aa95&w=740" }} // Reemplaza con la URL de tu imagen
+      source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg?t=st=1745869550~exp=1745873150~hmac=9d7dbe401017644b95f9ddb401bf1291cdac6d71398f87ae96ea1d0e229884b6&w=740" }} // Reemplaza con la URL de tu imagen
       style={styles.background}
     >
       <View style={styles.glassContainer}>
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   glassContainer: {
     flex: 0.8, 
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // Fondo semitransparente
+    backgroundColor: "rgba(255, 255, 255, 0.4)", // Fondo semitransparente
     borderRadius: 15,
     padding: 20,
     margin: 20,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ImageBackground } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Navigation';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,16 +7,85 @@ import { Ionicons } from '@expo/vector-icons';
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) => {
-  const grades = [
-    { id: 1, name: 'Primer Grado', image: { uri: 'https://i.pinimg.com/474x/ee/06/6d/ee066ddb6dca34e9b4b69acc5abf6cfa.jpg' } },
-    { id: 2, name: 'Segundo Grado', image: { uri: 'https://i.pinimg.com/236x/09/f1/c5/09f1c52863a176de934639a9265766e9.jpg' } },
-    { id: 3, name: 'Tercer Grado', image: { uri: 'https://i.pinimg.com/236x/7e/63/87/7e6387d65721f106e40cb543ed739b55.jpg' } },
-    { id: 4, name: 'Cuarto Grado', image: { uri: 'https://i.pinimg.com/474x/bd/5e/ca/bd5ecabe37705cdf796a63385c4af5aa.jpg' } },
-    { id: 5, name: 'Quinto Grado', image: { uri: 'https://i.pinimg.com/474x/8a/8d/43/8a8d4325daa0f0e2fc993b5e8eb2c506.jpg' } },
-    { id: 6, name: 'Sexto Grado', image: { uri: 'https://i.pinimg.com/236x/9b/32/13/9b321387f2daf1cebdc92aad09b0a8ec.jpg' } },
+  const students = [
+    // Primer Grado
+    { id: 1, name: 'Juan Pérez', gradeId: 1 },
+    { id: 2, name: 'Ana Gómez', gradeId: 1 },
+    { id: 3, name: 'Luis Martínez', gradeId: 1 },
+    { id: 4, name: 'Sofía López', gradeId: 1 },
+    { id: 5, name: 'Carlos Sánchez', gradeId: 1 },
+    { id: 6, name: 'María Fernández', gradeId: 1 },
+    { id: 7, name: 'Pedro Ramírez', gradeId: 1 },
+    { id: 8, name: 'Lucía Torres', gradeId: 1 },
+    { id: 9, name: 'Diego Morales', gradeId: 1 },
+    { id: 10, name: 'Valentina Ruiz', gradeId: 1 },
+  
+    // Segundo Grado
+    { id: 11, name: 'Mateo Díaz', gradeId: 2 },
+    { id: 12, name: 'Isabella Castro', gradeId: 2 },
+    { id: 13, name: 'Sebastián Herrera', gradeId: 2 },
+    { id: 14, name: 'Camila Jiménez', gradeId: 2 },
+    { id: 15, name: 'Andrés Vargas', gradeId: 2 },
+    { id: 16, name: 'Valeria Peña', gradeId: 2 },
+    { id: 17, name: 'Nicolás Salazar', gradeId: 2 },
+    { id: 18, name: 'Emilia Ortega', gradeId: 2 },
+    { id: 19, name: 'Felipe Cordero', gradeId: 2 },
+    { id: 20, name: 'Renata Paredes', gradeId: 2 },
+  
+    // Tercer Grado
+    { id: 21, name: 'Joaquín Soto', gradeId: 3 },
+    { id: 22, name: 'Mariana Ríos', gradeId: 3 },
+    { id: 23, name: 'Samuel Aguirre', gradeId: 3 },
+    { id: 24, name: 'Victoria Castro', gradeId: 3 },
+    { id: 25, name: 'Gonzalo Medina', gradeId: 3 },
+    { id: 26, name: 'Santiago León', gradeId: 3 },
+    { id: 27, name: 'Mía Silva', gradeId: 3 },
+    { id: 28, name: 'Dante Romero', gradeId: 3 },
+    { id: 29, name: 'Lola Ceballos', gradeId: 3 },
+    { id: 30, name: 'Rafael Torres', gradeId: 3 },
+  
+    // Cuarto Grado
+    { id: 31, name: 'Álvaro Ruiz', gradeId: 4 },
+    { id: 32, name: 'Sofía Morales', gradeId: 4 },
+    { id: 33, name: 'Diego Salas', gradeId: 4 },
+    { id: 34, name: 'Lucía Castro', gradeId: 4 },
+    { id: 35, name: 'Julián Pérez', gradeId: 4 },
+    { id: 36, name: 'Camila López', gradeId: 4 },
+    { id: 37, name: 'Emilio Fernández', gradeId: 4 },
+    { id: 38, name: 'Valentina Ríos', gradeId: 4 },
+    { id: 39, name: 'Mateo Jiménez', gradeId: 4 },
+    { id: 40, name: 'Isabella Torres', gradeId: 4 },
+  
+    // Quinto Grado
+    { id: 41, name: 'Lucas Martínez', gradeId: 5 },
+    { id: 42, name: 'María José González', gradeId: 5 },
+    { id: 43, name: 'Nicolás Ramírez', gradeId: 5 },
+    { id: 44, name: 'Valeria Salazar', gradeId: 5 },
+    { id: 45, name: 'Andrés Cordero', gradeId: 5 },
+    { id: 46, name: 'Sofía Méndez', gradeId : 5 },
+    { id: 47, name: 'Diego Torres', gradeId: 5 },
+    { id: 48, name: 'Camila Ruiz', gradeId: 5 },
+    { id: 49, name: 'Felipe González', gradeId: 5 },
+    { id: 50, name: 'Valentina Castro', gradeId: 5 },
+  
+    // Sexto Grado
+    { id: 51, name: 'Javier López', gradeId: 6 },
+    { id: 52, name: 'Lucía Martínez', gradeId: 6 },
+    { id: 53, name: 'Mateo Ramírez', gradeId: 6 },
+    { id: 54, name: 'Emilia Fernández', gradeId: 6 },
+    { id: 55, name: 'Andrés Salas', gradeId: 6 },
+    { id: 56, name: 'Sofía Cordero', gradeId: 6 },
+    { id: 57, name: 'Nicolás Ortega', gradeId: 6 },
+    { id: 58, name: 'Valeria Ríos', gradeId: 6 },
+    { id: 59, name: 'Diego Aguirre', gradeId: 6 },
+    { id: 60, name: 'Mariana Peña', gradeId: 6 },
   ];
 
   return (
+    <ImageBackground 
+    source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg?t=st=1745869550~exp=1745873150~hmac=9d7dbe401017644b95f9ddb401bf1291cdac6d71398f87ae96ea1d0e229884b6&w=740" }} // Reemplaza con la URL de tu imagen
+    style={styles.background}
+    >
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Bienvenido nuevamente!</Text>
       <View style={styles.grid}>
@@ -31,23 +100,28 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
           </TouchableOpacity>
         ))}
       </View>
-      <View style={styles.iconsContainer}>
+      {/* <View style={styles.iconsContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
           <Ionicons name="notifications" size={28} color="black" />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <Ionicons name="person-circle-outline" size={28} color="black" />
         </TouchableOpacity>
-      </View>
+      </View> */}
     </ScrollView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    resizeMode: "stretch",
+    justifyContent: "center",
+  },
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
@@ -67,11 +141,11 @@ const styles = StyleSheet.create({
     width: '48%',
     alignItems: 'center',
     padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowColor: 'black',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 9,
   },
   gradeImage: {
     width: "100%",

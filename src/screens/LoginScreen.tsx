@@ -9,7 +9,7 @@ const LoginScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
   return (
     <ImageBackground
-      source={{ uri: "https://img.freepik.com/vector-gratis/hojas-tropicales-estilo-abstracto_23-2148538088.jpg?t=st=1745698739~exp=1745702339~hmac=6d94cbc1487c3a7d06661faf5688f278e36f3578f700f3da3aab2d9278e70f2a&w=740" }}
+      source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg?t=st=1745869550~exp=1745873150~hmac=9d7dbe401017644b95f9ddb401bf1291cdac6d71398f87ae96ea1d0e229884b6&w=740" }}
       style={styles.background}
     >
       <View style={styles.glassContainer}>
@@ -36,13 +36,15 @@ const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   background: {
+    width:"100%",
+    height:"100%",
     flex: 1,
     resizeMode: "stretch",
     justifyContent: "center",
   },
   glassContainer: {
     flex: 0.8,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
     borderRadius: 15,
     padding: 20,
     margin: 20,
