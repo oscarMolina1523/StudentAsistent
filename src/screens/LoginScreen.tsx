@@ -1,12 +1,33 @@
-import React from "react";
-import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, ImageBackground, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../Navigation";
+import { login } from "../services/authService";
 
 const LoginScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList, "Login">>();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    try {
+      const result = await login(email, password);
+
+      if (result.success) {
+        // Navigate to the "Home" screen upon successful login
+        navigation.navigate("Home");
+      } else {
+        // Show an alert with the error message
+        Alert.alert("Error", result.message);
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred.");
+    }
+  };
+
   return (
     <ImageBackground
       source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg?t=st=1745869550~exp=1745873150~hmac=9d7dbe401017644b95f9ddb401bf1291cdac6d71398f87ae96ea1d0e229884b6&w=740" }}
@@ -18,9 +39,17 @@ const LoginScreen = () => {
           style={styles.input}
           placeholder="Email"
           keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
         />
-        <TextInput style={styles.input} placeholder="Password" secureTextEntry />
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Home")}>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Iniciar Sesion</Text>
         </TouchableOpacity>
         <View style={styles.footer}>
@@ -36,8 +65,8 @@ const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   background: {
-    width:"100%",
-    height:"100%",
+    width: "100%",
+    height: "100%",
     flex: 1,
     resizeMode: "stretch",
     justifyContent: "center",
