@@ -30,13 +30,15 @@ export const login = async (email: string, password: string) => {
   }
 };
 
-export const register = async (email: string, password: string, role: string) => {
+export const register = async (name: string, email: string, password: string, role: string) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/register`, {
-      nombre:"",
+      nombre: name,
       email,
       password,
-      role,
+      rol: role,
+      fotoPerfilUrl:"https://cdn-icons-png.flaticon.com/512/10015/10015419.png",
+      fechaCreacion: new Date().toISOString(),
     });
     return { success: true, message: 'Registro exitoso' };
   } catch (error: any) {

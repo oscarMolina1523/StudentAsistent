@@ -17,7 +17,7 @@ const RegisterScreen = () => {
 
   const handleRegister = async () => {
     try {
-      const result = await register(email, password, role);
+      const result = await register(name, email, password, role);
       Alert.alert("Success", "Registration successful!", [
         { text: "OK", onPress: () => navigation.navigate("Login") },
       ]);
