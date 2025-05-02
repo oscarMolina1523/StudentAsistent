@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'https://studentasistentbackend-production.up.railway.app';
+export const API_BASE_URL = 'https://backend-fastapi-ten.vercel.app';
