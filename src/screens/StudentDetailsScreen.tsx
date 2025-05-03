@@ -6,7 +6,7 @@ import { addNotification } from '../services/notificationService';
 
 type Student = { id: number; name: string; status?: string };
 
-const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: number } } }) => {
+const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: string } } }) => {
   const { gradeId } = route.params;
 
   const [students, setStudents] = useState<Student[]>([]);

@@ -1,49 +1,102 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ImageBackground } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Image, ImageBackground
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../Navigation';
-import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../utils/constants';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) => {
-  const grades = [
-    { id: 1, name: 'Primer Grado', image: { uri: 'https://i.pinimg.com/474x/ee/06/6d/ee066ddb6dca34e9b4b69acc5abf6cfa.jpg' } },
-    { id: 2, name: 'Segundo Grado', image: { uri: 'https://i.pinimg.com/236x/09/f1/c5/09f1c52863a176de934639a9265766e9.jpg' } },
-    { id: 3, name: 'Tercer Grado', image: { uri: 'https://i.pinimg.com/236x/7e/63/87/7e6387d65721f106e40cb543ed739b55.jpg' } },
-    { id: 4, name: 'Cuarto Grado', image: { uri: 'https://i.pinimg.com/474x/bd/5e/ca/bd5ecabe37705cdf796a63385c4af5aa.jpg' } },
-    { id: 5, name: 'Quinto Grado', image: { uri: 'https://i.pinimg.com/474x/8a/8d/43/8a8d4325daa0f0e2fc993b5e8eb2c506.jpg' } },
-    { id: 6, name: 'Sexto Grado', image: { uri: 'https://i.pinimg.com/236x/9b/32/13/9b321387f2daf1cebdc92aad09b0a8ec.jpg' } },
-  ];
+  const [grades, setGrades] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Función para ordenar grados numéricamente a partir del campo "nombre"
+  const ordenarPorNumero = (grades: any[]) => {
+    return grades.sort((a, b) => {
+      const numeroA = parseInt(a.nombre);
+      const numeroB = parseInt(b.nombre);
+      return numeroA - numeroB;
+    });
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const role = await AsyncStorage.getItem('userRole');
+        const userId = await AsyncStorage.getItem('userId');
+        const idToken = await AsyncStorage.getItem('idToken');
+        const headers = {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        };
+
+        if (role === 'admin') {
+          const response = await axios.get(`${API_BASE_URL}/grades`, headers);
+          setGrades(ordenarPorNumero(response.data));
+        } else if (role === 'profesor' && userId) {
+          const response = await axios.get(`${API_BASE_URL}/profesor/${userId}/materias`, headers);
+          const subjects = response.data;
+
+          // Extraer los grados únicos desde las materias
+          const uniqueGrades: any[] = [];
+          const gradeIds = new Set();
+
+          subjects.forEach((subject: any) => {
+            if (subject.grado && !gradeIds.has(subject.grado.id)) {
+              uniqueGrades.push(subject.grado);
+              gradeIds.add(subject.grado.id);
+            }
+          });
+
+          setGrades(ordenarPorNumero(uniqueGrades));
+        }
+      } catch (error) {
+        console.error('Error fetching grades:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Cargando...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ImageBackground 
-    source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg?t=st=1745869550~exp=1745873150~hmac=9d7dbe401017644b95f9ddb401bf1291cdac6d71398f87ae96ea1d0e229884b6&w=740" }} // Reemplaza con la URL de tu imagen
-    style={styles.background}
+    <ImageBackground
+      source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg" }}
+      style={styles.background}
     >
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Bienvenido nuevamente!</Text>
-      <View style={styles.grid}>
-        {grades.map((grade) => (
-          <TouchableOpacity
-            key={grade.id}
-            style={styles.gradeCard}
-            onPress={() => navigation.navigate('StudentDetailsScreen', { gradeId: grade.id })}
-          >
-            <Image source={grade.image} style={styles.gradeImage} />
-            <Text style={styles.gradeText}>{grade.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {/* <View style={styles.iconsContainer}>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-          <Ionicons name="notifications" size={28} color="black" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <Ionicons name="person-circle-outline" size={28} color="black" />
-        </TouchableOpacity>
-      </View> */}
-    </ScrollView>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Bienvenido nuevamente!</Text>
+        <View style={styles.grid}>
+          {grades.map((grade) => (
+            <TouchableOpacity
+              key={grade.id}
+              style={styles.gradeCard}
+              onPress={() => navigation.navigate('SubjectsByGradeScreen', { gradeId: grade.id })}
+            >
+              <Image
+                source={{ uri: grade.imagenUrl }}
+                style={styles.gradeImage}
+              />
+              <Text style={styles.gradeText}>{grade.nombre}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </ImageBackground>
   );
 };
@@ -93,10 +146,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  iconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

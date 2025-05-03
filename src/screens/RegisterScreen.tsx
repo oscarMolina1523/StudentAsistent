@@ -67,8 +67,9 @@ const RegisterScreen = () => {
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Registrarse</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text style={styles.link}>¿Ya tienes una cuenta? Inicia sesión</Text>
+        <TouchableOpacity style={{flexDirection:"row", alignItems:"center", justifyContent:"center", marginTop:10, gap:4}} onPress={() => navigation.navigate("Login")}>
+          <Text >¿Ya tienes una cuenta?</Text>
+          <Text style={styles.link}>Inicia sesión</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
   },
   link: {
     color: "blue",
-    marginTop: 10,
     textAlign: "center",
   },
   pickerContainer: {

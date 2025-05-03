@@ -1,4 +1,4 @@
-type Student = { id: number; name: string };
+type Student = { id: string; name: string };
 
 const staticData: { [key: number]: Student[] } = {
   1: [
