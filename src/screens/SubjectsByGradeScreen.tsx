@@ -42,9 +42,9 @@ const SubjectsByGradeScreen = ({ route, navigation }: any) => {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Materias del {gradeName}</Text>
       <View style={styles.grid}>
-        {subjects.map((subject) => (
+        {subjects.map((subject, index) => (
           <TouchableOpacity
-            key={subject.id}
+            key={subject.id || `subject-${index}`}
             style={styles.subjectCard}
             onPress={() => navigation.navigate('StudentDetailsScreen', { subjectId: subject.id })}
           >
