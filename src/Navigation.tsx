@@ -57,8 +57,8 @@ const Navigation = () => {
               </TouchableOpacity>
             ),
             headerRight: () => (
-              <View style={{ flexDirection: 'row', gap: 15, marginRight: 10 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+              <View style={{ flexDirection: 'row',alignItems: 'center', gap: 10 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('Notifications')} >
                   <Ionicons name="notifications" size={28} color="white" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
