@@ -2,12 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSubjectsByGrade } from '../services/subjectServices';
+import { getGradeById, getSubjectsByGrade } from '../services/subjectServices';
 
 const SubjectsByGradeScreen = ({ route, navigation }: any) => {
   const { gradeId } = route.params;
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [gradeName, setGradeName] = useState('');
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -15,7 +16,9 @@ const SubjectsByGradeScreen = ({ route, navigation }: any) => {
         const idToken = await AsyncStorage.getItem('idToken');
         if (idToken) {
           const subjectsData = await getSubjectsByGrade(gradeId);
+          const grade = await getGradeById(gradeId);
           setSubjects(subjectsData);
+          setGradeName(grade.nombre);
         }
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -37,7 +40,7 @@ const SubjectsByGradeScreen = ({ route, navigation }: any) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Materias del Grado {gradeId}</Text>
+      <Text style={styles.title}>Materias del {gradeName}</Text>
       <View style={styles.grid}>
         {subjects.map((subject) => (
           <TouchableOpacity
