@@ -27,21 +27,19 @@ export const getSubjectDetails = async (subjectId: string) => {
 // Obtener las materias de un grado con sus detalles
 export const getSubjectsByGrade = async (gradeId: string) => {
   try {
-    // Obtener las relaciones entre grados y materias
     const relations = await getGradeSubjectRelations(gradeId);
+    const subjectDetailsPromises = relations.map(async (relation: any) => {
+      const subject = await getSubjectDetails(relation.materiaId);
+      return { ...subject, materiaGradoId: relation.id }; // Agrega esta línea
+    });
 
-    // Obtener los detalles de cada materia
-    const subjectDetailsPromises = relations.map((relation: any) =>
-      getSubjectDetails(relation.materiaId)
-    );
-
-    const subjects = await Promise.all(subjectDetailsPromises);
-    return subjects;
+    return await Promise.all(subjectDetailsPromises);
   } catch (error) {
     console.error('Error fetching subjects by grade:', error);
     throw error;
   }
 };
+
 
 
 export const getGradeById = async (gradeId: string) => {
