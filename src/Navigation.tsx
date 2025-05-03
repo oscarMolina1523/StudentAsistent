@@ -84,7 +84,7 @@ const Navigation = () => {
           name="StudentDetailsScreen"
           component={StudentDetailsScreen}
           options={{
-            title: "Detalles de Grado",
+            title: "Detalles de Materia",
           }}
         />
         <Stack.Screen

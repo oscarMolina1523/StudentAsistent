@@ -46,7 +46,7 @@ const SubjectsByGradeScreen = ({ route, navigation }: any) => {
           <TouchableOpacity
             key={subject.id}
             style={styles.subjectCard}
-            onPress={() => navigation.navigate('SubjectDetailsScreen', { subjectId: subject.id })}
+            onPress={() => navigation.navigate('StudentDetailsScreen', { subjectId: subject.id })}
           >
             <Image source={{ uri: subject.imagenUrl }} style={styles.subjectImage} />
             <Text style={styles.subjectText}>{subject.nombre}</Text>

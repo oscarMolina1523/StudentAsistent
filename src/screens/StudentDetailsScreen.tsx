@@ -1,32 +1,45 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import { getStudentsByGrade } from '../services/studentService';
+import { getStudentsBySubjectGrade } from '../services/studentService';
 import { markAttendance } from '../services/attendanceService';
 import { addNotification } from '../services/notificationService';
 
-type Student = { id: number; name: string; status?: string };
+type Student = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  activo: boolean;
+  status?: string;
+};
 
-const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: string } } }) => {
-  const { gradeId } = route.params;
-
+const StudentDetailsScreen = ({ route, navigation }: any) => {
+  const { materiaGradoId } = route.params;
   const [students, setStudents] = useState<Student[]>([]);
 
   useEffect(() => {
-    const studentsData = getStudentsByGrade(gradeId);
-    setStudents(studentsData);
-  }, [gradeId]);
+    const fetchStudents = async () => {
+      try {
+        const data = await getStudentsBySubjectGrade(materiaGradoId);
+        setStudents(data);
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      }
+    };
 
-  const handleStatusChange = async (studentId: number, status: string) => {
+    fetchStudents();
+  }, [materiaGradoId]);
+
+  const handleStatusChange = async (studentId: string, status: string) => {
     await markAttendance(studentId, status);
-    setStudents((prevStudents) =>
-      prevStudents.map((student) =>
+    setStudents((prev) =>
+      prev.map((student) =>
         student.id === studentId ? { ...student, status } : student
       )
     );
     if (status === 'Ausente') {
       const student = students.find((s) => s.id === studentId);
       if (student) {
-        addNotification(`${student.name} fue marcado como ausente.`);
+        addNotification(`${student.nombre} ${student.apellido} fue marcado como ausente.`);
       }
     }
   };
@@ -39,39 +52,24 @@ const StudentDetailsScreen = ({ route }: { route: { params: { gradeId: string } 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Estudiantes del {gradeId} Grado</Text>
+      <Text style={styles.title}>Estudiantes de la Materia</Text>
       <FlatList
         data={students}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.studentContainer}>
             <View style={styles.studentRow}>
-              <Text style={styles.studentName}>{item.name}</Text>
+              <Text style={styles.studentName}>{item.nombre} {item.apellido}</Text>
               <View style={styles.optionsContainer}>
-                {!item.status || item.status === 'Presente' ? (
-                  <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Presente')}>
-                    <Image
-                      source={{ uri: imageUrls.presente }}
-                      style={styles.optionImage}
-                    />
-                  </TouchableOpacity>
-                ) : null}
-                {!item.status || item.status === 'Ausente' ? (
-                  <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Ausente')}>
-                    <Image
-                      source={{ uri: imageUrls.ausente }}
-                      style={styles.optionImage}
-                    />
-                  </TouchableOpacity>
-                ) : null}
-                {!item.status || item.status === 'Justificado' ? (
-                  <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Justificado')}>
-                    <Image
-                      source={{ uri: imageUrls.justificado }}
-                      style={styles.optionImage}
-                    />
-                  </TouchableOpacity>
-                ) : null}
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Presente')}>
+                  <Image source={{ uri: imageUrls.presente }} style={styles.optionImage} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Ausente')}>
+                  <Image source={{ uri: imageUrls.ausente }} style={styles.optionImage} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Justificado')}>
+                  <Image source={{ uri: imageUrls.justificado }} style={styles.optionImage} />
+                </TouchableOpacity>
               </View>
             </View>
           </View>

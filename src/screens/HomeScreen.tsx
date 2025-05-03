@@ -1,17 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Image, ImageBackground
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../Navigation';
-import { API_BASE_URL } from '../utils/constants';
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  ImageBackground,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../Navigation";
+import { API_BASE_URL } from "../utils/constants";
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type HomeScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Home"
+>;
 
-const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) => {
+const HomeScreen = ({
+  navigation,
+}: {
+  navigation: HomeScreenNavigationProp;
+}) => {
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,20 +39,23 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const role = await AsyncStorage.getItem('userRole');
-        const userId = await AsyncStorage.getItem('userId');
-        const idToken = await AsyncStorage.getItem('idToken');
+        const role = await AsyncStorage.getItem("userRole");
+        const userId = await AsyncStorage.getItem("userId");
+        const idToken = await AsyncStorage.getItem("idToken");
         const headers = {
           headers: {
             Authorization: `Bearer ${idToken}`,
           },
         };
 
-        if (role === 'admin') {
+        if (role === "admin") {
           const response = await axios.get(`${API_BASE_URL}/grades`, headers);
           setGrades(ordenarPorNumero(response.data));
-        } else if (role === 'profesor' && userId) {
-          const response = await axios.get(`${API_BASE_URL}/profesor/${userId}/materias`, headers);
+        } else if (role === "profesor" && userId) {
+          const response = await axios.get(
+            `${API_BASE_URL}/profesor/${userId}/materias`,
+            headers
+          );
           const subjects = response.data;
 
           // Extraer los grados únicos desde las materias
@@ -57,7 +72,7 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
           setGrades(ordenarPorNumero(uniqueGrades));
         }
       } catch (error) {
-        console.error('Error fetching grades:', error);
+        console.error("Error fetching grades:", error);
       } finally {
         setLoading(false);
       }
@@ -76,7 +91,9 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
 
   return (
     <ImageBackground
-      source={{ uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg" }}
+      source={{
+        uri: "https://img.freepik.com/vector-gratis/vector-fondo-verde-blanco-simple-negocios_53876-174913.jpg",
+      }}
       style={styles.background}
     >
       <ScrollView contentContainerStyle={styles.container}>
@@ -86,7 +103,11 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
             <TouchableOpacity
               key={grade.id}
               style={styles.gradeCard}
-              onPress={() => navigation.navigate('SubjectsByGradeScreen', { gradeId: grade.id })}
+              onPress={() =>
+                navigation.navigate("SubjectsByGradeScreen", {
+                  gradeId: grade.id,
+                })
+              }
             >
               <Image
                 source={{ uri: grade.imagenUrl }}
@@ -113,23 +134,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   gradeCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     marginBottom: 20,
-    width: '48%',
-    alignItems: 'center',
+    width: "48%",
+    alignItems: "center",
     padding: 10,
-    shadowColor: 'black',
+    shadowColor: "black",
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 6,
@@ -139,17 +160,17 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 150,
     marginBottom: 10,
-    objectFit: 'contain',
+    objectFit: "contain",
   },
   gradeText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
