@@ -30,7 +30,7 @@ export const getSubjectsByGrade = async (gradeId: string) => {
     const relations = await getGradeSubjectRelations(gradeId);
     const subjectDetailsPromises = relations.map(async (relation: any) => {
       const subject = await getSubjectDetails(relation.materiaId);
-      return { ...subject, materiaGradoId: relation.id }; // Agrega esta línea
+      return { ...subject,  materiaGradoId: relation.id, }; // Agrega esta línea
     });
 
     return await Promise.all(subjectDetailsPromises);

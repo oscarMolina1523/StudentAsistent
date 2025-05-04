@@ -55,7 +55,7 @@ const SubjectsByGradeScreen = ({ route, navigation }: any) => {
             key={subject.materiaGradoId}
             onPress={() =>
               navigation.navigate("StudentDetailsScreen", {
-                subjectId: subject.materiaGradoId,
+                materiaGradoId: subject.materiaGradoId,
               })
             }
           >
