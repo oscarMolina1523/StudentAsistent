@@ -14,7 +14,7 @@ type Student = {
   status?: string;
 };
 
-const StudentDetailsScreen = ({ route, navigation }: any) => {
+const StudentDetailsScreen = ({ route }: any) => {
   const { materiaGradoId } = route.params;
   const [students, setStudents] = useState<Student[]>([]);
   const [materiaId, setMateriaId] = useState<string | null>(null);
@@ -23,10 +23,9 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
     const fetchData = async () => {
       try {
         const data = await getStudentsBySubjectGrade(materiaGradoId);
-        setStudents(data);
-
         const materia = await getMateriaIdByMateriaGradoId(materiaGradoId);
         setMateriaId(materia);
+        await loadStatusesFromStorage(data);
       } catch (error) {
         console.error('Error fetching students or materiaId:', error);
       }
@@ -34,6 +33,33 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
 
     fetchData();
   }, [materiaGradoId]);
+
+  const saveStatusToStorage = async (studentId: string, status: string) => {
+    try {
+      const storedStatuses = await AsyncStorage.getItem('studentStatuses');
+      const parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
+      parsedStatuses[studentId] = status;
+      await AsyncStorage.setItem('studentStatuses', JSON.stringify(parsedStatuses));
+    } catch (error) {
+      console.error('Error saving status to storage:', error);
+    }
+  };
+
+  const loadStatusesFromStorage = async (studentsList: Student[]) => {
+    try {
+      const storedStatuses = await AsyncStorage.getItem('studentStatuses');
+      const parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
+
+      const updatedStudents = studentsList.map(student => ({
+        ...student,
+        status: parsedStatuses[student.id] || null,
+      }));
+
+      setStudents(updatedStudents);
+    } catch (error) {
+      console.error('Error loading statuses from storage:', error);
+    }
+  };
 
   const handleStatusChange = async (studentId: string, estado: 'presente' | 'ausente' | 'justificado') => {
     try {
@@ -44,8 +70,7 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
 
       const now = new Date();
       const fecha = now.toISOString();
-      const horaRegistro = now.toTimeString().split(' ')[0]; // formato HH:mm:ss
-
+      const horaRegistro = now.toTimeString().split(' ')[0];
       const registradoPor = await AsyncStorage.getItem('userId') || 'desconocido';
 
       const attendanceData = {
@@ -61,6 +86,8 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
       const response = await markAttendance(attendanceData);
 
       if (response.message === 'Attendance recorded successfully') {
+        await saveStatusToStorage(studentId, estado);
+
         setStudents((prev) =>
           prev.map((student) =>
             student.id === studentId ? { ...student, status: estado } : student
@@ -98,15 +125,25 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
             <View style={styles.studentRow}>
               <Text style={styles.studentName}>{item.nombre} {item.apellido}</Text>
               <View style={styles.optionsContainer}>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'presente')}>
-                  <Image source={{ uri: imageUrls.presente }} style={styles.optionImage} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'ausente')}>
-                  <Image source={{ uri: imageUrls.ausente }} style={styles.optionImage} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'justificado')}>
-                  <Image source={{ uri: imageUrls.justificado }} style={styles.optionImage} />
-                </TouchableOpacity>
+                {!item.status && (
+                  <>
+                    <TouchableOpacity onPress={() => handleStatusChange(item.id, 'presente')}>
+                      <Image source={{ uri: imageUrls.presente }} style={styles.optionImage} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleStatusChange(item.id, 'ausente')}>
+                      <Image source={{ uri: imageUrls.ausente }} style={styles.optionImage} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleStatusChange(item.id, 'justificado')}>
+                      <Image source={{ uri: imageUrls.justificado }} style={styles.optionImage} />
+                    </TouchableOpacity>
+                  </>
+                )}
+                {item.status && (
+                  <Image
+                    source={{ uri: imageUrls[item.status as keyof typeof imageUrls] }}
+                    style={[styles.optionImage, { borderColor: 'green', borderWidth: 2, borderRadius: 5 }]}
+                  />
+                )}
               </View>
             </View>
           </View>
