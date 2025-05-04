@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { editUserProfile } from '../services/userService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileScreen = ({ navigation }: any) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -12,7 +13,15 @@ const ProfileScreen = ({ navigation }: any) => {
     setModalVisible(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Borrar todos los datos relacionados con la sesión en AsyncStorage
+    await AsyncStorage.removeItem('userId');
+    await AsyncStorage.removeItem('userRole');
+    await AsyncStorage.removeItem('idToken');
+    await AsyncStorage.removeItem('refreshToken');
+    await AsyncStorage.removeItem('email');
+
+    // Redirigir al usuario a la pantalla de inicio de sesión
     navigation.navigate('Login');
   };
 

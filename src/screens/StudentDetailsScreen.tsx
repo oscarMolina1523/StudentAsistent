@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react
 import { getStudentsBySubjectGrade } from '../services/studentService';
 import { markAttendance } from '../services/attendanceService';
 import { addNotification } from '../services/notificationService';
+import { getMateriaIdByMateriaGradoId } from '../services/subjectServices';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Student = {
   id: string;
@@ -15,32 +17,67 @@ type Student = {
 const StudentDetailsScreen = ({ route, navigation }: any) => {
   const { materiaGradoId } = route.params;
   const [students, setStudents] = useState<Student[]>([]);
+  const [materiaId, setMateriaId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       try {
         const data = await getStudentsBySubjectGrade(materiaGradoId);
         setStudents(data);
+
+        const materia = await getMateriaIdByMateriaGradoId(materiaGradoId);
+        setMateriaId(materia);
       } catch (error) {
-        console.error('Error fetching students:', error);
+        console.error('Error fetching students or materiaId:', error);
       }
     };
 
-    fetchStudents();
+    fetchData();
   }, [materiaGradoId]);
 
-  const handleStatusChange = async (studentId: string, status: string) => {
-    await markAttendance(studentId, status);
-    setStudents((prev) =>
-      prev.map((student) =>
-        student.id === studentId ? { ...student, status } : student
-      )
-    );
-    if (status === 'Ausente') {
-      const student = students.find((s) => s.id === studentId);
-      if (student) {
-        addNotification(`${student.nombre} ${student.apellido} fue marcado como ausente.`);
+  const handleStatusChange = async (studentId: string, estado: 'presente' | 'ausente' | 'justificado') => {
+    try {
+      if (!materiaId) {
+        console.error('materiaId no disponible. No se puede registrar la asistencia.');
+        return;
       }
+
+      const now = new Date();
+      const fecha = now.toISOString();
+      const horaRegistro = now.toTimeString().split(' ')[0]; // formato HH:mm:ss
+
+      const registradoPor = await AsyncStorage.getItem('userId') || 'desconocido';
+
+      const attendanceData = {
+        alumnoId: studentId,
+        materiaId,
+        fecha,
+        estado,
+        justificacion: estado === 'justificado' ? 'Falta justificada' : '',
+        registradoPor,
+        horaRegistro,
+      };
+
+      const response = await markAttendance(attendanceData);
+
+      if (response.message === 'Attendance recorded successfully') {
+        setStudents((prev) =>
+          prev.map((student) =>
+            student.id === studentId ? { ...student, status: estado } : student
+          )
+        );
+
+        if (estado === 'ausente') {
+          const student = students.find((s) => s.id === studentId);
+          if (student) {
+            addNotification(`${student.nombre} ${student.apellido} fue marcado como ausente.`);
+          }
+        }
+      } else {
+        console.error('Error al registrar la asistencia:', response.message);
+      }
+    } catch (error) {
+      console.error('Error al registrar asistencia:', error);
     }
   };
 
@@ -61,13 +98,13 @@ const StudentDetailsScreen = ({ route, navigation }: any) => {
             <View style={styles.studentRow}>
               <Text style={styles.studentName}>{item.nombre} {item.apellido}</Text>
               <View style={styles.optionsContainer}>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Presente')}>
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'presente')}>
                   <Image source={{ uri: imageUrls.presente }} style={styles.optionImage} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Ausente')}>
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'ausente')}>
                   <Image source={{ uri: imageUrls.ausente }} style={styles.optionImage} />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'Justificado')}>
+                <TouchableOpacity onPress={() => handleStatusChange(item.id, 'justificado')}>
                   <Image source={{ uri: imageUrls.justificado }} style={styles.optionImage} />
                 </TouchableOpacity>
               </View>

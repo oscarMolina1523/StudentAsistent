@@ -51,3 +51,16 @@ export const getGradeById = async (gradeId: string) => {
     throw error;
   }
 };
+
+// Obtener la materiaId a partir de una relación materia-grado
+export const getMateriaIdByMateriaGradoId = async (materiaGradoId: string): Promise<string | null> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/grade-subjects`);
+    const relations = response.data;
+    const relation = relations.find((r: any) => r.id === materiaGradoId);
+    return relation ? relation.materiaId : null;
+  } catch (error) {
+    console.error('Error fetching materiaId by materiaGradoId:', error);
+    throw error;
+  }
+};
