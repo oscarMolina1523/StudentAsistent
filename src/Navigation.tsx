@@ -9,6 +9,7 @@ import StudentDetailsScreen from "./screens/StudentDetailsScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import SubjectsByGradeScreen from "./screens/SubjectsByGradeScreen";
+import MenuModal from "./shared/MenuModal";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -53,11 +54,7 @@ const Navigation = () => {
           component={HomeScreen}
           options={({ navigation }) => ({
             title: "Home",
-            headerLeft: () => (
-              <TouchableOpacity onPress={() => alert("Menu opened")}>
-                <Ionicons name="menu" size={28} color="white" />
-              </TouchableOpacity>
-            ),
+            headerLeft: () => <MenuModal />,
             headerRight: () => (
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
