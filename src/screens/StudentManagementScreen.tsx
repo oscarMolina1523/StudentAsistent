@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getAllStudents,
   createStudent,
   updateStudent,
   deleteStudent,
-} from '../services/studentService'; // Asegúrate de que la ruta sea correcta
+} from "../services/studentService"; // Asegúrate de que la ruta sea correcta
 
 // Definir la interfaz para el estudiante
 interface Student {
@@ -33,12 +33,12 @@ const StudentManagementScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentData, setStudentData] = useState<Student>({
-    id: '',
-    nombre: '',
-    apellido: '',
-    gradoId: '',
-    turno: '',
-    fechaNacimiento: '',
+    id: "",
+    nombre: "",
+    apellido: "",
+    gradoId: "",
+    turno: "",
+    fechaNacimiento: "",
     activo: true,
   });
 
@@ -93,12 +93,12 @@ const StudentManagementScreen = () => {
     } else {
       setSelectedStudent(null);
       setStudentData({
-        id: '',
-        nombre: '',
-        apellido: '',
-        gradoId: '',
-        turno: '',
-        fechaNacimiento: '',
+        id: "",
+        nombre: "",
+        apellido: "",
+        gradoId: "",
+        turno: "",
+        fechaNacimiento: "",
         activo: true,
       });
     }
@@ -107,7 +107,9 @@ const StudentManagementScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Button title="Agregar Estudiante" onPress={() => openModal(null)} />
+      <TouchableOpacity style={styles.button} onPress={() => openModal(null)}>
+        <Text style={styles.buttonText}>Agregar Estudiante</Text>
+      </TouchableOpacity>
       <FlatList
         data={students}
         keyExtractor={(item) => item.id}
@@ -132,34 +134,54 @@ const StudentManagementScreen = () => {
               style={styles.input}
               placeholder="Nombre"
               value={studentData.nombre}
-              onChangeText={(text) => setStudentData({ ...studentData, nombre: text })}
+              onChangeText={(text) =>
+                setStudentData({ ...studentData, nombre: text })
+              }
             />
             <TextInput
               style={styles.input}
               placeholder="Apellido"
               value={studentData.apellido}
-              onChangeText={(text) => setStudentData({ ...studentData, apellido: text })}
+              onChangeText={(text) =>
+                setStudentData({ ...studentData, apellido: text })
+              }
             />
             <TextInput
               style={styles.input}
               placeholder="Grado ID"
               value={studentData.gradoId}
-              onChangeText={(text) => setStudentData({ ...studentData, gradoId: text })}
+              onChangeText={(text) =>
+                setStudentData({ ...studentData, gradoId: text })
+              }
             />
             <TextInput
               style={styles.input}
               placeholder="Turno"
               value={studentData.turno}
-              onChangeText={(text) => setStudentData({ ...studentData, turno: text })}
+              onChangeText={(text) =>
+                setStudentData({ ...studentData, turno: text })
+              }
             />
             <TextInput
               style={styles.input}
               placeholder="Fecha de Nacimiento"
               value={studentData.fechaNacimiento}
-              onChangeText={(text) => setStudentData({ ...studentData, fechaNacimiento: text })}
+              onChangeText={(text) =>
+                setStudentData({ ...studentData, fechaNacimiento: text })
+              }
             />
-            <Button title={selectedStudent ? 'Actualizar' : 'Crear'} onPress={selectedStudent ? handleUpdate : handleCreate} />
-            <Button title="Cancelar" onPress={() => setModalVisible(false)} />
+            <TouchableOpacity
+              style={styles.button}
+              onPress={selectedStudent ? handleUpdate : handleCreate}
+            >
+              <Text style={styles.buttonText}>{selectedStudent ? "Actualizar" : "Crear"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: 'red' }]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -172,31 +194,45 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  button: {
+    backgroundColor: "blue",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    width: "100%",
+    alignItems: "center",
+  },
   studentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 10,
     borderBottomWidth: 1,
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   modalBackground: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContainer: {
     width: 300,
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
   },
   input: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: "gray",
     borderWidth: 1,
     marginBottom: 10,
     paddingLeft: 8,
