@@ -40,7 +40,7 @@ const CustomMenu = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleNavigate("Profile")}
+              onPress={() => handleNavigate("StudentManagementScreen")}
             >
               <Text style={styles.menuText}>Estudiantes</Text>
             </TouchableOpacity>
