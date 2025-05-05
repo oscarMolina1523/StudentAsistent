@@ -1,15 +1,26 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity, Text, Modal, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../Navigation"; 
+import { RootStackParamList } from "../Navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Asegúrate de tener AsyncStorage importado
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CustomMenu = () => {
   const [visible, setVisible] = useState(false);
+  const [role, setRole] = useState<string>(''); // Para almacenar el rol del usuario
   const navigation = useNavigation<NavigationProp>();
+
+  // Obtener el rol del usuario cuando se monta el componente
+  useEffect(() => {
+    const loadRole = async () => {
+      const storedRole = await AsyncStorage.getItem("userRole"); // Obtiene el rol del usuario desde AsyncStorage
+      if (storedRole) setRole(storedRole); // Si tiene un rol, lo guarda en el estado
+    };
+    loadRole();
+  }, []);
 
   const toggleMenu = () => {
     setVisible(!visible);
@@ -22,9 +33,13 @@ const CustomMenu = () => {
 
   return (
     <View>
-      <TouchableOpacity onPress={toggleMenu}>
-        <Ionicons name="menu" size={28} color="white" />
-      </TouchableOpacity>
+      {/* Solo muestra el icono del menú si el rol es "admin" */}
+      {role === 'admin' && (
+        <TouchableOpacity onPress={toggleMenu}>
+          <Ionicons name="menu" size={28} color="white" />
+        </TouchableOpacity>
+      )}
+      
       <Modal transparent visible={visible} animationType="fade">
         <TouchableOpacity
           style={styles.modalBackground}
