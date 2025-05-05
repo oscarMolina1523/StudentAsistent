@@ -19,11 +19,7 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<
   "Home"
 >;
 
-const HomeScreen = ({
-  navigation,
-}: {
-  navigation: HomeScreenNavigationProp;
-}) => {
+const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) => {
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,23 +95,33 @@ const HomeScreen = ({
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Bienvenido nuevamente!</Text>
         <View style={styles.grid}>
-          {grades.map((grade) => (
-            <TouchableOpacity
-              key={grade.id}
-              style={styles.gradeCard}
-              onPress={() =>
-                navigation.navigate("SubjectsByGradeScreen", {
-                  gradeId: grade.id,
-                })
-              }
-            >
-              <Image
-                source={{ uri: grade.imagenUrl }}
-                style={styles.gradeImage}
-              />
-              <Text style={styles.gradeText}>{grade.nombre}</Text>
-            </TouchableOpacity>
-          ))}
+          {grades.length === 0 ? (
+            // Si no hay grados, mostramos el mensaje
+            <View style={styles.noGradesContainer}>
+              <Text style={styles.noGradesText}>
+                Aún no se te ha asignado nada
+              </Text>
+            </View>
+          ) : (
+            // Si hay grados, mostramos los botones
+            grades.map((grade) => (
+              <TouchableOpacity
+                key={grade.id}
+                style={styles.gradeCard}
+                onPress={() =>
+                  navigation.navigate("SubjectsByGradeScreen", {
+                    gradeId: grade.id,
+                  })
+                }
+              >
+                <Image
+                  source={{ uri: grade.imagenUrl }}
+                  style={styles.gradeImage}
+                />
+                <Text style={styles.gradeText}>{grade.nombre}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </ScrollView>
     </ImageBackground>
@@ -171,6 +177,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  // Estilo para el mensaje cuando no hay grados
+  noGradesContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noGradesText: {
+    fontSize: 18,
+    color: "gray",
+    textAlign: "center",
   },
 });
 

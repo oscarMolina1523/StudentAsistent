@@ -45,12 +45,20 @@ export const getUsersByRole = async (rol: string) => {
 // Editar perfil de usuario (requiere pasar el ID y el objeto user)
 export const updateUser = async (userId: string, userData: any) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/users/${userId}`, userData, await getAuthHeaders());
+    const response = await axios.put(
+      `${API_BASE_URL}/auth/edit-profile?user_id=${userId}`,
+      userData,
+      await getAuthHeaders()
+    );
     return { success: true, message: response.data.message };
   } catch (error: any) {
-    return { success: false, message: error.response?.data?.detail || 'Error al actualizar el usuario' };
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error al actualizar el usuario',
+    };
   }
 };
+
 
 // Eliminar usuario
 export const deleteUser = async (userId: string) => {
