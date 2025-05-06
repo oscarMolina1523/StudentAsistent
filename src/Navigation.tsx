@@ -11,12 +11,14 @@ import NotificationsScreen from "./screens/NotificationsScreen";
 import SubjectsByGradeScreen from "./screens/SubjectsByGradeScreen";
 import MenuModal from "./shared/MenuModal";
 import StudentManagementScreen from "./screens/StudentManagementScreen";
+import UserManagementScreen from "./screens/UserManagementScreen";
 
 export type RootStackParamList = {
   Home: undefined;
   Login: undefined;
   Register: undefined;
   StudentManagementScreen: undefined;
+  UserManagementScreen: undefined;
   StudentDetailsScreen: { gradeId: string };
   SubjectsByGradeScreen: { gradeId: string };
   Profile: undefined;
@@ -103,6 +105,13 @@ const Navigation = () => {
           component={StudentManagementScreen}
           options={{
             title: "Administrar Estudiantes",
+          }}
+        />
+        <Stack.Screen
+          name="UserManagementScreen"
+          component={UserManagementScreen}
+          options={{
+            title: "Administrar Usuarios",
           }}
         />
         <Stack.Screen

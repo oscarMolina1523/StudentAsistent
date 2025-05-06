@@ -49,7 +49,7 @@ const CustomMenu = () => {
           <View style={styles.menu}>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleNavigate("Home")}
+              onPress={() => handleNavigate("UserManagementScreen")}
             >
               <Text style={styles.menuText}>Usuarios</Text>
             </TouchableOpacity>
