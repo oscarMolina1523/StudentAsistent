@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, FlatList, Modal, TouchableOpacity, StyleSheet, TextInput, Image } from 'react-native';
+import { View, Text, FlatList, Modal, TouchableOpacity, StyleSheet, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import { getAllUsers, createUser, updateUser, deleteUser } from '../services/userService'; // Aquí importamos las funciones del servicio
+import { Picker } from '@react-native-picker/picker';
 
-const API_BASE_URL = 'https://backend-fastapi-ten.vercel.app'; // URL de tu API
-
-// Definir la interfaz para el usuario
 interface User {
   uid: string;
   email: string;
@@ -33,60 +31,52 @@ const UserManagementScreen = () => {
   }, []);
 
   const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/users`);
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      alert('Error al obtener los usuarios');
+    const result = await getAllUsers();
+    if (result.success) {
+      setUsers(result.data);
+    } else {
+      console.error(result.message);
+      alert(result.message);
     }
   };
 
   const handleCreateOrUpdate = async () => {
     if (selectedUser) {
-      // Actualizar usuario
-      await updateUser(selectedUser.uid);
+      await updateUserDetails(selectedUser.uid);
     } else {
-      // Crear usuario
-      await createUser();
+      await createUserDetails();
     }
   };
 
-  const createUser = async () => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/users`, userData);
-      if (response.status === 200) {
-        fetchUsers();
-        setModalVisible(false);
-      }
-    } catch (error) {
-      console.error('Error creating user:', error);
-      alert('Error al crear el usuario');
+  const createUserDetails = async () => {
+    const result = await createUser(userData);
+    if (result.success) {
+      fetchUsers();
+      setModalVisible(false);
+    } else {
+      console.error(result.message);
+      alert(result.message);
     }
   };
 
-  const updateUser = async (userId: string) => {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/users/${userId}`, userData);
-      if (response.status === 200) {
-        fetchUsers();
-        setModalVisible(false);
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      alert('Error al actualizar el usuario');
+  const updateUserDetails = async (userId: string) => {
+    const result = await updateUser(userId, userData);
+    if (result.success) {
+      fetchUsers();
+      setModalVisible(false);
+    } else {
+      console.error(result.message);
+      alert(result.message);
     }
   };
 
   const handleDelete = async (userId: string) => {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/users/${userId}`);
-      if (response.status === 200) {
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('Error al eliminar el usuario');
+    const result = await deleteUser(userId);
+    if (result.success) {
+      fetchUsers();
+    } else {
+      console.error(result.message);
+      alert(result.message);
     }
   };
 
@@ -122,6 +112,7 @@ const UserManagementScreen = () => {
             <View style={styles.userInfo}>
               <Text style={styles.userText}>{item.nombre}</Text>
               <Text style={styles.userText}>{item.email}</Text>
+              <Text style={styles.userText}>Rol: {item.rol}</Text>
             </View>
             <View style={styles.actions}>
               <TouchableOpacity onPress={() => openModal(item)}>
@@ -149,12 +140,16 @@ const UserManagementScreen = () => {
               value={userData.email}
               onChangeText={(text) => setUserData({ ...userData, email: text })}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Rol"
-              value={userData.rol}
-              onChangeText={(text) => setUserData({ ...userData, rol: text })}
-            />
+            <Picker
+              selectedValue={userData.rol}
+              onValueChange={(value) => setUserData({ ...userData, rol: value })}
+              style={styles.picker}
+            >
+              <Picker.Item label="Seleccionar rol..." value="" enabled={false} />
+              <Picker.Item label="Admin" value="admin" />
+              <Picker.Item label="Tutor" value="tutor" />
+              <Picker.Item label="Profesor" value="professor" />
+            </Picker>
             <TextInput
               style={styles.input}
               placeholder="Foto de Perfil URL"
@@ -198,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     borderBottomWidth: 1,
-    flexWrap: 'wrap', // Permitirá que el texto se envuelva si es largo
+    flexWrap: 'wrap',
   },
   profilePic: {
     width: 40,
@@ -208,16 +203,16 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
-    flexWrap: 'wrap', // Permite que el texto se ajuste al espacio disponible
+    flexWrap: 'wrap',
   },
   userText: {
-    flexWrap: 'wrap', // Esto permitirá que los textos largos se ajusten sin afectar los botones
-    maxWidth: '80%', // Esto asegura que el texto no ocupe todo el ancho disponible
+    flexWrap: 'wrap',
+    maxWidth: '80%',
   },
   actions: {
     flexDirection: 'row',
     gap: 10,
-    justifyContent: 'flex-end', // Asegura que los botones se alineen a la derecha
+    justifyContent: 'flex-end',
   },
   modalBackground: {
     flex: 1,
@@ -237,6 +232,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingLeft: 8,
+  },
+  picker: {
+    height: 50,
+    marginBottom: 10,
+    borderColor: 'gray',
+    borderWidth: 1,
   },
 });
 

@@ -79,3 +79,20 @@ export const getUserExtendedInfo = async (userId: string) => {
     return { success: false, message: error.response?.data?.detail || 'Error al obtener la información del usuario' };
   }
 };
+
+// Crear un nuevo usuario
+export const createUser = async (userData: any) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/users`,
+      userData,
+      await getAuthHeaders()
+    );
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error al crear el usuario',
+    };
+  }
+};
