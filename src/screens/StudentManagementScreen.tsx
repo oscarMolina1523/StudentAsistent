@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  Button,
   FlatList,
   Modal,
   TouchableOpacity,
@@ -15,9 +14,10 @@ import {
   createStudent,
   updateStudent,
   deleteStudent,
-} from "../services/studentService"; // Asegúrate de que la ruta sea correcta
+} from "../services/studentService";
+import { fetchGrades, Grade } from "../services/gradeService";
+import { Picker } from "@react-native-picker/picker";
 
-// Definir la interfaz para el estudiante
 interface Student {
   id: string;
   nombre: string;
@@ -32,6 +32,7 @@ const StudentManagementScreen = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [grades, setGrades] = useState<Grade[]>([]);
   const [studentData, setStudentData] = useState<Student>({
     id: "",
     nombre: "",
@@ -44,6 +45,7 @@ const StudentManagementScreen = () => {
 
   useEffect(() => {
     fetchStudents();
+    fetchGradesList();
   }, []);
 
   const fetchStudents = async () => {
@@ -52,6 +54,17 @@ const StudentManagementScreen = () => {
       setStudents(response.data);
     } else {
       alert(response.message);
+    }
+  };
+
+  const fetchGradesList = async () => {
+    try {
+      const result = await fetchGrades();
+      // Ordenamos de menor a mayor (1ro, 2do, ..., 6to)
+      const ordered = result.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      setGrades(ordered);
+    } catch (error) {
+      alert("Error al obtener grados");
     }
   };
 
@@ -96,7 +109,7 @@ const StudentManagementScreen = () => {
         id: "",
         nombre: "",
         apellido: "",
-        gradoId: "",
+        gradoId: grades.length > 0 ? grades[0].id : "",
         turno: "",
         fechaNacimiento: "",
         activo: true,
@@ -146,14 +159,24 @@ const StudentManagementScreen = () => {
                 setStudentData({ ...studentData, apellido: text })
               }
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Grado ID"
-              value={studentData.gradoId}
-              onChangeText={(text) =>
-                setStudentData({ ...studentData, gradoId: text })
+
+            {/* Picker para gradoId */}
+            <Picker
+              selectedValue={studentData.gradoId}
+              onValueChange={(itemValue) =>
+                setStudentData({ ...studentData, gradoId: itemValue })
               }
-            />
+              style={styles.picker}
+            >
+              {grades.map((grade) => (
+                <Picker.Item
+                  key={grade.id}
+                  label={grade.nombre}
+                  value={grade.id}
+                />
+              ))}
+            </Picker>
+
             <TextInput
               style={styles.input}
               placeholder="Turno"
@@ -174,10 +197,12 @@ const StudentManagementScreen = () => {
               style={styles.button}
               onPress={selectedStudent ? handleUpdate : handleCreate}
             >
-              <Text style={styles.buttonText}>{selectedStudent ? "Actualizar" : "Crear"}</Text>
+              <Text style={styles.buttonText}>
+                {selectedStudent ? "Actualizar" : "Crear"}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: 'red' }]}
+              style={[styles.button, { backgroundColor: "red" }]}
               onPress={() => setModalVisible(false)}
             >
               <Text style={styles.buttonText}>Cancelar</Text>
@@ -237,6 +262,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingLeft: 8,
   },
+  picker: {
+    height: 50,
+    marginBottom: 10,
+    borderColor: "gray",
+    borderWidth: 1,
+    borderRadius: 4,
+    justifyContent: "center",
+  },
+  
 });
 
 export default StudentManagementScreen;
