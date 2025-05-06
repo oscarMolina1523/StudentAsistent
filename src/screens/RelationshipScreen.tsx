@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, Alert, StyleSheet } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useState, useEffect } from "react";
+import { View, Text, Button, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import {
   createTutorStudentRelation,
   createProfessorSubjectRelation,
-  createGradeSubjectRelation
-} from '../services/relationshipService';
-import { fetchGrades } from '../services/gradeService';
-import { getAllStudents } from '../services/studentService';
-import { fetchSubjects, getSubjectsByGrade } from '../services/subjectServices';
-import { getUsersByRole } from '../services/userService';
-import axios from 'axios';
+  createGradeSubjectRelation,
+} from "../services/relationshipService";
+import { fetchGrades } from "../services/gradeService";
+import { getAllStudents } from "../services/studentService";
+import { fetchSubjects, getSubjectsByGrade } from "../services/subjectServices";
+import { getUsersByRole } from "../services/userService";
+import axios from "axios";
 
 const RelationshipScreen = () => {
-  const [relationType, setRelationType] = useState('');
-  const [tutorId, setTutorId] = useState('');
-  const [alumnoId, setAlumnoId] = useState('');
-  const [profesorId, setProfesorId] = useState('');
-  const [materiaGradoId, setMateriaGradoId] = useState(''); // Este es el ID de la relación entre materia y grado
-  const [materiaId, setMateriaId] = useState('');
-  const [turno, setTurno] = useState('mañana');
+  const [relationType, setRelationType] = useState("");
+  const [tutorId, setTutorId] = useState("");
+  const [alumnoId, setAlumnoId] = useState("");
+  const [profesorId, setProfesorId] = useState("");
+  const [materiaGradoId, setMateriaGradoId] = useState(""); // Este es el ID de la relación entre materia y grado
+  const [materiaId, setMateriaId] = useState("");
+  const [turno, setTurno] = useState("mañana");
   const [anioEscolar, setAnioEscolar] = useState(2025);
-  const [gradoId, setGradoId] = useState('');
+  const [gradoId, setGradoId] = useState("");
   const [semestre, setSemestre] = useState(1);
 
   const [tutores, setTutores] = useState([]);
@@ -31,7 +31,7 @@ const RelationshipScreen = () => {
   const [grados, setGrados] = useState([]);
 
   const parseMessage = (message) => {
-    return Array.isArray(message) ? message.join('\n') : String(message);
+    return Array.isArray(message) ? message.join("\n") : String(message);
   };
 
   useEffect(() => {
@@ -42,30 +42,31 @@ const RelationshipScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (relationType === 'grade-subject' && gradoId) {
+    if (relationType === "grade-subject" && gradoId) {
       fetchAllMaterias();
-    } else if (relationType === 'professor-subject' && gradoId) {
+    } else if (relationType === "professor-subject" && gradoId) {
       fetchGradeSubjectRelations(gradoId);
     }
   }, [gradoId, relationType]);
 
   const fetchTutores = async () => {
-    const response = await getUsersByRole('tutor');
+    const response = await getUsersByRole("tutor");
     if (response.success) {
       setTutores(response.data);
       if (!tutorId && response.data.length > 0) setTutorId(response.data[0].id);
     } else {
-      Alert.alert('Error', 'No se pudo cargar los tutores');
+      Alert.alert("Error", "No se pudo cargar los tutores");
     }
   };
 
   const fetchProfesores = async () => {
-    const response = await getUsersByRole('profesor');
+    const response = await getUsersByRole("profesor");
     if (response.success) {
       setProfesores(response.data);
-      if (!profesorId && response.data.length > 0) setProfesorId(response.data[0].id);
+      if (!profesorId && response.data.length > 0)
+        setProfesorId(response.data[0].id);
     } else {
-      Alert.alert('Error', 'No se pudo cargar los profesores');
+      Alert.alert("Error", "No se pudo cargar los profesores");
     }
   };
 
@@ -73,9 +74,10 @@ const RelationshipScreen = () => {
     const response = await getAllStudents();
     if (response.success) {
       setAlumnos(response.data);
-      if (!alumnoId && response.data.length > 0) setAlumnoId(response.data[0].id);
+      if (!alumnoId && response.data.length > 0)
+        setAlumnoId(response.data[0].id);
     } else {
-      Alert.alert('Error', 'No se pudo cargar los alumnos');
+      Alert.alert("Error", "No se pudo cargar los alumnos");
     }
   };
 
@@ -91,7 +93,7 @@ const RelationshipScreen = () => {
       setMaterias(subjects);
       if (!materiaId && subjects.length > 0) setMateriaId(subjects[0].id);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar las materias');
+      Alert.alert("Error", "No se pudieron cargar las materias");
     }
   };
 
@@ -102,31 +104,34 @@ const RelationshipScreen = () => {
         id: s.materiaGradoId,
         nombre: s.nombre,
       }));
-      console.log('Payload enviado:', {
+      console.log("Payload enviado:", {
         profesorId,
         materiaGradoId,
         turno,
-        anioEscolar
+        anioEscolar,
       });
-      
+
       setMaterias(formatted);
-      if (!materiaGradoId && formatted.length > 0) setMateriaGradoId(formatted[0].id);
+      if (!materiaGradoId && formatted.length > 0)
+        setMateriaGradoId(formatted[0].id);
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron cargar las relaciones grado-materia');
+      Alert.alert(
+        "Error",
+        "No se pudieron cargar las relaciones grado-materia"
+      );
     }
   };
-  
 
   const handleSubmit = async () => {
-    if (relationType === 'tutor-student' && tutorId && alumnoId) {
+    if (relationType === "tutor-student" && tutorId && alumnoId) {
       const result = await createTutorStudentRelation(tutorId, alumnoId);
       if (result.success) {
-        Alert.alert('Éxito', 'Relación Tutor-Alumno creada con éxito');
+        Alert.alert("Éxito", "Relación Tutor-Alumno creada con éxito");
       } else {
-        Alert.alert('Error', parseMessage(result.message));
+        Alert.alert("Error", parseMessage(result.message));
       }
     } else if (
-      relationType === 'professor-subject' &&
+      relationType === "professor-subject" &&
       profesorId &&
       materiaGradoId && // Aquí enviamos la relación correcta
       turno &&
@@ -139,25 +144,34 @@ const RelationshipScreen = () => {
         anioEscolar
       );
       if (result.success) {
-        Alert.alert('Éxito', 'Relación Profesor-Materia creada con éxito');
+        Alert.alert("Éxito", "Relación Profesor-Materia creada con éxito");
       } else {
-        Alert.alert('Error', parseMessage(result.message));
+        Alert.alert("Error", parseMessage(result.message));
       }
-    } else if (relationType === 'grade-subject' && gradoId && materiaId && semestre) {
-      const result = await createGradeSubjectRelation(gradoId, materiaId, semestre);
+    } else if (
+      relationType === "grade-subject" &&
+      gradoId &&
+      materiaId &&
+      semestre
+    ) {
+      const result = await createGradeSubjectRelation(
+        gradoId,
+        materiaId,
+        semestre
+      );
       if (result.success) {
-        Alert.alert('Éxito', 'Relación Grado-Materia creada con éxito');
+        Alert.alert("Éxito", "Relación Grado-Materia creada con éxito");
       } else {
-        Alert.alert('Error', parseMessage(result.message));
+        Alert.alert("Error", parseMessage(result.message));
       }
     } else {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert("Error", "Por favor completa todos los campos");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear Relación</Text>
+      <Text style={styles.title}>Crear Relaciones</Text>
 
       <Text>Tipo de Relación:</Text>
       <Picker selectedValue={relationType} onValueChange={setRelationType}>
@@ -167,44 +181,67 @@ const RelationshipScreen = () => {
         <Picker.Item label="Grado-Materia" value="grade-subject" />
       </Picker>
 
-      {relationType === 'tutor-student' && (
+      {relationType === "tutor-student" && (
         <>
           <Text>Tutor:</Text>
           <Picker selectedValue={tutorId} onValueChange={setTutorId}>
             {tutores.map((tutor) => (
-              <Picker.Item key={tutor.id} label={tutor.nombre} value={tutor.id} />
+              <Picker.Item
+                key={tutor.id}
+                label={tutor.nombre}
+                value={tutor.id}
+              />
             ))}
           </Picker>
 
           <Text>Alumno:</Text>
           <Picker selectedValue={alumnoId} onValueChange={setAlumnoId}>
             {alumnos.map((alumno) => (
-              <Picker.Item key={alumno.id} label={`${alumno.nombre} ${alumno.apellido}`} value={alumno.id} />
+              <Picker.Item
+                key={alumno.id}
+                label={`${alumno.nombre} ${alumno.apellido}`}
+                value={alumno.id}
+              />
             ))}
           </Picker>
         </>
       )}
 
-      {relationType === 'professor-subject' && (
+      {relationType === "professor-subject" && (
         <>
           <Text>Grado:</Text>
           <Picker selectedValue={gradoId} onValueChange={setGradoId}>
             {grados.map((grado) => (
-              <Picker.Item key={grado.id} label={grado.nombre} value={grado.id} />
+              <Picker.Item
+                key={grado.id}
+                label={grado.nombre}
+                value={grado.id}
+              />
             ))}
           </Picker>
 
           <Text>Profesor:</Text>
           <Picker selectedValue={profesorId} onValueChange={setProfesorId}>
             {profesores.map((profesor) => (
-              <Picker.Item key={profesor.id} label={profesor.nombre} value={profesor.id} />
+              <Picker.Item
+                key={profesor.id}
+                label={profesor.nombre}
+                value={profesor.id}
+              />
             ))}
           </Picker>
 
           <Text>Materia:</Text>
-          <Picker selectedValue={materiaGradoId} onValueChange={setMateriaGradoId}>
+          <Picker
+            selectedValue={materiaGradoId}
+            onValueChange={setMateriaGradoId}
+          >
             {materias.map((materia) => (
-              <Picker.Item key={materia.id} label={materia.nombre} value={materia.id} />
+              <Picker.Item
+                key={materia.id}
+                label={materia.nombre}
+                value={materia.id}
+              />
             ))}
           </Picker>
 
@@ -222,19 +259,27 @@ const RelationshipScreen = () => {
         </>
       )}
 
-      {relationType === 'grade-subject' && (
+      {relationType === "grade-subject" && (
         <>
           <Text>Grado:</Text>
           <Picker selectedValue={gradoId} onValueChange={setGradoId}>
             {grados.map((grado) => (
-              <Picker.Item key={grado.id} label={grado.nombre} value={grado.id} />
+              <Picker.Item
+                key={grado.id}
+                label={grado.nombre}
+                value={grado.id}
+              />
             ))}
           </Picker>
 
           <Text>Materia:</Text>
           <Picker selectedValue={materiaId} onValueChange={setMateriaId}>
             {materias.map((materia) => (
-              <Picker.Item key={materia.id} label={materia.nombre} value={materia.id} />
+              <Picker.Item
+                key={materia.id}
+                label={materia.nombre}
+                value={materia.id}
+              />
             ))}
           </Picker>
 
@@ -246,7 +291,10 @@ const RelationshipScreen = () => {
         </>
       )}
 
-      <Button title="Crear Relación" onPress={handleSubmit} />
+      {/* <Button title="Crear Relación" onPress={handleSubmit} /> */}
+      <TouchableOpacity style={styles.button}  onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Crear Relación</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -255,13 +303,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center'
+    justifyContent: "center",
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
-    textAlign: 'center'
-  }
+    textAlign: "center",
+  },
+  button: {
+    backgroundColor: '#339999',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    width: '100%',
+    height: 50,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
 });
 
 export default RelationshipScreen;
