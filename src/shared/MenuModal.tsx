@@ -67,7 +67,7 @@ const CustomMenu = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleNavigate("Notifications")}
+              onPress={() => handleNavigate("SubjectManagementScreen")}
             >
               <Text style={styles.menuText}>Materias</Text>
             </TouchableOpacity>

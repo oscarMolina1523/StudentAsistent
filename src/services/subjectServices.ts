@@ -1,8 +1,17 @@
-// services/subjectService.ts
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
 
-// Obtener las relaciones entre grados y materias
+// Interfaces
+export interface Subject {
+  id: string;
+  nombre: string;
+  imagenUrl: string;
+}
+
+// ----------------------
+// FUNCIONES RELACIONADAS A MATERIA-GRADO
+// ----------------------
+
 export const getGradeSubjectRelations = async (gradeId: string) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/grade-subjects/${gradeId}`);
@@ -13,7 +22,6 @@ export const getGradeSubjectRelations = async (gradeId: string) => {
   }
 };
 
-// Obtener los detalles de una materia por su ID
 export const getSubjectDetails = async (subjectId: string) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/subjects/${subjectId}`);
@@ -24,13 +32,12 @@ export const getSubjectDetails = async (subjectId: string) => {
   }
 };
 
-// Obtener las materias de un grado con sus detalles
 export const getSubjectsByGrade = async (gradeId: string) => {
   try {
     const relations = await getGradeSubjectRelations(gradeId);
     const subjectDetailsPromises = relations.map(async (relation: any) => {
       const subject = await getSubjectDetails(relation.materiaId);
-      return { ...subject,  materiaGradoId: relation.id, }; // Agrega esta línea
+      return { ...subject, materiaGradoId: relation.id };
     });
 
     return await Promise.all(subjectDetailsPromises);
@@ -39,8 +46,6 @@ export const getSubjectsByGrade = async (gradeId: string) => {
     throw error;
   }
 };
-
-
 
 export const getGradeById = async (gradeId: string) => {
   try {
@@ -52,7 +57,6 @@ export const getGradeById = async (gradeId: string) => {
   }
 };
 
-// Obtener la materiaId a partir de una relación materia-grado
 export const getMateriaIdByMateriaGradoId = async (materiaGradoId: string): Promise<string | null> => {
   try {
     const response = await axios.get(`${API_BASE_URL}/grade-subjects`);
@@ -63,4 +67,25 @@ export const getMateriaIdByMateriaGradoId = async (materiaGradoId: string): Prom
     console.error('Error fetching materiaId by materiaGradoId:', error);
     throw error;
   }
+};
+
+// ----------------------
+// CRUD DE MATERIAS
+// ----------------------
+
+export const fetchSubjects = async (): Promise<Subject[]> => {
+  const response = await axios.get(`${API_BASE_URL}/subjects`);
+  return response.data;
+};
+
+export const createSubject = async (subject: Omit<Subject, 'id'>): Promise<void> => {
+  await axios.post(`${API_BASE_URL}/subjects`, subject);
+};
+
+export const updateSubject = async (id: string, subject: Omit<Subject, 'id'>): Promise<void> => {
+  await axios.put(`${API_BASE_URL}/subjects/${id}`, subject);
+};
+
+export const deleteSubject = async (id: string): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/subjects/${id}`);
 };
