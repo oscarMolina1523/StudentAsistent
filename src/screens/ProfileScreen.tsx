@@ -67,12 +67,12 @@ const ProfileScreen = ({ navigation }: any) => {
         <Text style={styles.buttonText}>Editar Perfil</Text>
       </TouchableOpacity>
 
-      {/* ✅ Mostrar solo si es admin */}
+      {/* ✅ Mostrar solo si es admin
       {role === 'admin' && (
         <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]}>
           <Text style={styles.buttonText}>Administrar</Text>
         </TouchableOpacity>
-      )}
+      )} */}
 
       <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
         <Text style={styles.buttonText}>Cerrar Sesión</Text>
