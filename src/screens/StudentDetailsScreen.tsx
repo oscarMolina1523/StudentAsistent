@@ -25,7 +25,9 @@ const StudentDetailsScreen = ({ route }: any) => {
         const data = await getStudentsBySubjectGrade(materiaGradoId);
         const materia = await getMateriaIdByMateriaGradoId(materiaGradoId);
         setMateriaId(materia);
-        await loadStatusesFromStorage(data);
+        if (materia) {
+          await loadStatusesFromStorage(data, materia);
+        }        
       } catch (error) {
         console.error('Error fetching students or materiaId:', error);
       }
@@ -34,23 +36,27 @@ const StudentDetailsScreen = ({ route }: any) => {
     fetchData();
   }, [materiaGradoId]);
 
-  const saveStatusToStorage = async (studentId: string, status: string) => {
+  const saveStatusToStorage = async (studentId: string, status: string, materiaId: string) => {
     try {
-      const storedStatuses = await AsyncStorage.getItem('studentStatuses');
+      const today = new Date().toISOString().split('T')[0];
+      const key = `statuses:${materiaId}:${today}`;
+      const storedStatuses = await AsyncStorage.getItem(key);
       const parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
       parsedStatuses[studentId] = status;
-      await AsyncStorage.setItem('studentStatuses', JSON.stringify(parsedStatuses));
+      await AsyncStorage.setItem(key, JSON.stringify(parsedStatuses));
     } catch (error) {
       console.error('Error saving status to storage:', error);
     }
   };
 
-  const loadStatusesFromStorage = async (studentsList: Student[]) => {
+  const loadStatusesFromStorage = async (studentsList: Student[], materiaId: string) => {
     try {
-      const storedStatuses = await AsyncStorage.getItem('studentStatuses');
+      const today = new Date().toISOString().split('T')[0];
+      const key = `statuses:${materiaId}:${today}`;
+      const storedStatuses = await AsyncStorage.getItem(key);
       const parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
 
-      const updatedStudents = studentsList.map(student => ({
+      const updatedStudents = studentsList.map((student) => ({
         ...student,
         status: parsedStatuses[student.id] || null,
       }));
@@ -86,7 +92,7 @@ const StudentDetailsScreen = ({ route }: any) => {
       const response = await markAttendance(attendanceData);
 
       if (response.message === 'Attendance recorded successfully') {
-        await saveStatusToStorage(studentId, estado);
+        await saveStatusToStorage(studentId, estado, materiaId);
 
         setStudents((prev) =>
           prev.map((student) =>

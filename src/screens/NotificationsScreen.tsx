@@ -8,7 +8,14 @@ const NotificationsScreen = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       const data = await getNotifications();
-      setNotifications(data);
+
+      // Ordenar de más reciente a más antigua
+      const sortedData = data.sort(
+        (a: any, b: any) =>
+          new Date(b.fechaEnvio).getTime() - new Date(a.fechaEnvio).getTime()
+      );
+
+      setNotifications(sortedData);
     };
 
     fetchNotifications();
