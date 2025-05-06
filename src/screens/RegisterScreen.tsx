@@ -61,7 +61,7 @@ const RegisterScreen = () => {
             style={styles.picker}
           >
             <Picker.Item label="Tutor" value="tutor" />
-            <Picker.Item label="Professor" value="professor" />
+            <Picker.Item label="Profesor" value="profesor" />
           </Picker>
         </View>
         <TouchableOpacity style={styles.button} onPress={handleRegister}>

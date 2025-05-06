@@ -14,6 +14,7 @@ import StudentManagementScreen from "./screens/StudentManagementScreen";
 import UserManagementScreen from "./screens/UserManagementScreen";
 import GradeManagementScreen from "./screens/GradeManagementScreen";
 import SubjectManagementScreen from "./screens/SubjectManagementScreen";
+import RelationshipScreen from "./screens/RelationshipScreen";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -23,6 +24,7 @@ export type RootStackParamList = {
   UserManagementScreen: undefined;
   GradeManagementScreen: undefined;
   SubjectManagementScreen: undefined;
+  RelationshipManagementScreen: undefined;
   StudentDetailsScreen: { gradeId: string };
   SubjectsByGradeScreen: { gradeId: string };
   Profile: undefined;
@@ -130,6 +132,13 @@ const Navigation = () => {
           component={SubjectManagementScreen}
           options={{
             title: "Administrar Materias",
+          }}
+        />
+        <Stack.Screen
+          name="RelationshipManagementScreen"
+          component={RelationshipScreen}
+          options={{
+            title: "Administrar Relaciones",
           }}
         />
         <Stack.Screen
