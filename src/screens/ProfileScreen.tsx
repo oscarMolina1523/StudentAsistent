@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
     fontSize: 18, color: '#666', marginBottom: 20,
   },
   button: {
-    backgroundColor: 'blue', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20,
+    backgroundColor: '#339999', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20,
     marginBottom: 10, width: '80%', alignItems: 'center',
   },
   logoutButton: {
-    backgroundColor: 'red',
+    backgroundColor: '#CF1020',
   },
   buttonText: {
     color: '#FFFFFF', fontSize: 18, fontWeight: 'bold',
