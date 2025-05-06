@@ -61,7 +61,7 @@ const CustomMenu = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
-              onPress={() => handleNavigate("Notifications")}
+              onPress={() => handleNavigate("GradeManagementScreen")}
             >
               <Text style={styles.menuText}>Grados</Text>
             </TouchableOpacity>
