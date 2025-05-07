@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "studentsApp",
-    "slug": "studentsApp",
+    "slug": "scoolassitent",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d4a99685-2f65-4236-9072-ab5f026d2aa4"
+      }
+    },
+    "owner": "oscarmolina",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d4a99685-2f65-4236-9072-ab5f026d2aa4"
     }
   }
 }
