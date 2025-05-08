@@ -77,6 +77,12 @@ const CustomMenu = () => {
             >
               <Text style={styles.menuText}>Asignar</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigate("AttendanceChart")}
+            >
+              <Text style={styles.menuText}>Graficos</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
