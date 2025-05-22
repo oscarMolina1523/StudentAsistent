@@ -1,18 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Dimensions, StyleSheet, ScrollView } from 'react-native';
-import { BarChart, PieChart } from 'react-native-chart-kit';
-import { getAttendanceSummary } from '../services/attendanceService';
-import { AttendanceSummary } from '../services/attendanceService';
-import { fetchGrades, Grade } from '../services/gradeService'; // Agrega el import para obtener los grados
-import { Picker } from '@react-native-picker/picker'; // Para seleccionar el grado
+import React, { useEffect, useState } from "react";
+import { View, Text, Dimensions, StyleSheet, ScrollView } from "react-native";
+import { BarChart, PieChart } from "react-native-chart-kit";
+import { getAttendanceSummary } from "../services/attendanceService";
+import { AttendanceSummary } from "../services/attendanceService";
+import { fetchGrades, Grade } from "../services/gradeService"; // Agrega el import para obtener los grados
+import { Picker } from "@react-native-picker/picker"; // Para seleccionar el grado
+// import { WebView } from "react-native-webview";
 
-const screenWidth = Dimensions.get('window').width;
+const screenWidth = Dimensions.get("window").width;
 
 const AttendanceChart = () => {
   const [summary, setSummary] = useState<AttendanceSummary[]>([]);
-  const [counts, setCounts] = useState({ presente: 0, ausente: 0, justificado: 0 });
+  const [counts, setCounts] = useState({
+    presente: 0,
+    ausente: 0,
+    justificado: 0,
+  });
   const [topAbsentStudents, setTopAbsentStudents] = useState<any[]>([]);
-  const [selectedGrade, setSelectedGrade] = useState<string>('todos');
+  const [selectedGrade, setSelectedGrade] = useState<string>("todos");
   const [grades, setGrades] = useState<Grade[]>([]); // Estado para los grados
 
   useEffect(() => {
@@ -21,18 +26,17 @@ const AttendanceChart = () => {
         // Obtener grados desde la API
         const gradeData = await fetchGrades();
         const sortedGrades = gradeData.sort((a, b) => {
-          const numA = parseInt(a.nombre.match(/\d+/)?.[0] || '0');
-          const numB = parseInt(b.nombre.match(/\d+/)?.[0] || '0');
+          const numA = parseInt(a.nombre.match(/\d+/)?.[0] || "0");
+          const numB = parseInt(b.nombre.match(/\d+/)?.[0] || "0");
           return numA - numB;
         });
         setGrades(sortedGrades);
-        
 
         // Obtener los datos de asistencia
         const attendanceData = await getAttendanceSummary();
         setSummary(attendanceData);
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error("Error loading data:", error);
       }
     };
 
@@ -40,39 +44,57 @@ const AttendanceChart = () => {
   }, []);
 
   // Función para filtrar los datos por grado
-  const filteredSummary = selectedGrade === 'todos'
-    ? summary
-    : summary.filter(item => item.gradoId === selectedGrade);
+  const filteredSummary =
+    selectedGrade === "todos"
+      ? summary
+      : summary.filter((item) => item.gradoId === selectedGrade);
 
   // Si no hay datos de asistencia para el grado seleccionado, mostrar todos los alumnos como presentes
-  const estadoCounts = filteredSummary.length === 0
-    ? { presente: 1, ausente: 0, justificado: 0 }  // Si no hay datos, todos están presentes
-    : filteredSummary.reduce(
-        (acc, cur) => {
-          acc[cur.estado]++;
-          return acc;
-        },
-        { presente: 0, ausente: 0, justificado: 0 }
-      );
+  const estadoCounts =
+    filteredSummary.length === 0
+      ? { presente: 1, ausente: 0, justificado: 0 } // Si no hay datos, todos están presentes
+      : filteredSummary.reduce(
+          (acc, cur) => {
+            acc[cur.estado]++;
+            return acc;
+          },
+          { presente: 0, ausente: 0, justificado: 0 }
+        );
 
   const absentCounts: { [key: string]: number } = {};
   filteredSummary.forEach((item) => {
-    if (item.estado === 'ausente') {
-      absentCounts[item.nombreAlumno] = (absentCounts[item.nombreAlumno] || 0) + 1;
+    if (item.estado === "ausente") {
+      absentCounts[item.nombreAlumno] =
+        (absentCounts[item.nombreAlumno] || 0) + 1;
     }
   });
 
   // Si no hay inasistencias, mostrar que todos los alumnos han asistido
-  const sortedAbsentStudents = filteredSummary.length === 0 || Object.keys(absentCounts).length === 0
-    ? []  // Si no hay inasistencias, no hay top 5
-    : Object.entries(absentCounts)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([name, count]) => ({ name, count }));
+  const sortedAbsentStudents =
+    filteredSummary.length === 0 || Object.keys(absentCounts).length === 0
+      ? [] // Si no hay inasistencias, no hay top 5
+      : Object.entries(absentCounts)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+          .map(([name, count]) => ({ name, count }));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Resumen de Asistencias</Text>
+      {/* <Text style={styles.subTitle}>Reporte de Power BI</Text>
+      <View
+        style={{ height: 400, width: screenWidth - 40, marginVertical: 10 }}
+      >
+        <WebView
+          source={{
+            uri: "https://app.powerbi.com/view?r=eyJrIjoiZDBmMzAyMTQtMWQzZS00YWNkLTk2OTgtMTc3NzgwNjU1ZDMzIiwidCI6ImU0NzY0NmZlLWRhMjctNDUxOC04NDM2LTVmOGIxNThiYTEyNyIsImMiOjR9",
+          }}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsFullscreenVideo
+          style={{ flex: 1 }}
+        />
+      </View> */}
 
       {/* Picker para seleccionar el grado */}
       <Picker
@@ -89,10 +111,14 @@ const AttendanceChart = () => {
       {/* Gráfico de barras de asistencia general */}
       <BarChart
         data={{
-          labels: ['Presente', 'Ausente', 'Justificado'],
+          labels: ["Presente", "Ausente", "Justificado"],
           datasets: [
             {
-              data: [estadoCounts.presente, estadoCounts.ausente, estadoCounts.justificado],
+              data: [
+                estadoCounts.presente,
+                estadoCounts.ausente,
+                estadoCounts.justificado,
+              ],
             },
           ],
         }}
@@ -101,9 +127,9 @@ const AttendanceChart = () => {
         yAxisLabel=""
         yAxisSuffix=""
         chartConfig={{
-          backgroundColor: '#ffffff',
-          backgroundGradientFrom: '#f0f0f0',
-          backgroundGradientTo: '#e0e0e0',
+          backgroundColor: "#ffffff",
+          backgroundGradientFrom: "#f0f0f0",
+          backgroundGradientTo: "#e0e0e0",
           decimalPlaces: 0,
           color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
           labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -117,33 +143,33 @@ const AttendanceChart = () => {
       <PieChart
         data={[
           {
-            name: 'Presente',
+            name: "Presente",
             population: estadoCounts.presente,
-            color: 'green',
-            legendFontColor: '#7F7F7F',
+            color: "green",
+            legendFontColor: "#7F7F7F",
             legendFontSize: 15,
           },
           {
-            name: 'Ausente',
+            name: "Ausente",
             population: estadoCounts.ausente,
-            color: 'red',
-            legendFontColor: '#7F7F7F',
+            color: "red",
+            legendFontColor: "#7F7F7F",
             legendFontSize: 15,
           },
           {
-            name: 'Justificado',
+            name: "Justificado",
             population: estadoCounts.justificado,
-            color: 'yellow',
-            legendFontColor: '#7F7F7F',
+            color: "yellow",
+            legendFontColor: "#7F7F7F",
             legendFontSize: 15,
           },
         ]}
         width={screenWidth - 40}
         height={220}
         chartConfig={{
-          backgroundColor: '#ffffff',
-          backgroundGradientFrom: '#f0f0f0',
-          backgroundGradientTo: '#e0e0e0',
+          backgroundColor: "#ffffff",
+          backgroundGradientFrom: "#f0f0f0",
+          backgroundGradientTo: "#e0e0e0",
           color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
         }}
         accessor="population"
@@ -154,11 +180,15 @@ const AttendanceChart = () => {
       {/* Gráfico de barras de los 5 alumnos con más inasistencias */}
       {sortedAbsentStudents.length > 0 && (
         <>
-          <Text style={styles.subTitle}>Top 5 Alumnos con más Inasistencias</Text>
+          <Text style={styles.subTitle}>
+            Top 5 Alumnos con más Inasistencias
+          </Text>
           <BarChart
             data={{
               labels: sortedAbsentStudents.map((item) =>
-                item.name.length > 10 ? `${item.name.slice(0, 10)}...` : item.name
+                item.name.length > 10
+                  ? `${item.name.slice(0, 10)}...`
+                  : item.name
               ),
               datasets: [
                 {
@@ -170,9 +200,9 @@ const AttendanceChart = () => {
             height={220}
             yAxisLabel=""
             chartConfig={{
-              backgroundColor: '#ffffff',
-              backgroundGradientFrom: '#f0f0f0',
-              backgroundGradientTo: '#e0e0e0',
+              backgroundColor: "#ffffff",
+              backgroundGradientFrom: "#f0f0f0",
+              backgroundGradientTo: "#e0e0e0",
               decimalPlaces: 0,
               color: (opacity = 1) => `rgba(255, 69, 0, ${opacity})`,
               labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -185,8 +215,10 @@ const AttendanceChart = () => {
       )}
 
       {/* Mensaje si no hay inasistencias */}
-      {sortedAbsentStudents.length === 0 && selectedGrade !== 'todos' && (
-        <Text style={styles.noDataText}>Todos los alumnos han asistido este mes.</Text>
+      {sortedAbsentStudents.length === 0 && selectedGrade !== "todos" && (
+        <Text style={styles.noDataText}>
+          Todos los alumnos han asistido este mes.
+        </Text>
       )}
     </ScrollView>
   );
@@ -195,7 +227,7 @@ const AttendanceChart = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
     paddingBottom: 20,
   },
   chart: {
@@ -205,13 +237,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     marginBottom: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   subTitle: {
     fontSize: 18,
     marginTop: 20,
     marginBottom: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   picker: {
     height: 50,
@@ -220,7 +252,7 @@ const styles = StyleSheet.create({
   },
   noDataText: {
     fontSize: 16,
-    color: 'gray',
+    color: "gray",
     marginTop: 20,
   },
 });
