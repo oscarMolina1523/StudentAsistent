@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllUsers, createUser, updateUser, deleteUser } from '../services/userService'; // Aquí importamos las funciones del servicio
 import { Picker } from '@react-native-picker/picker';
 
-interface User {
+export interface User {
   uid: string;
   email: string;
   nombre: string;
