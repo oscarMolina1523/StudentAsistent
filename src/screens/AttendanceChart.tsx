@@ -1,72 +1,208 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Dimensions, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import { View, Text, Dimensions, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
-import { getAttendanceSummary } from "../services/attendanceService";
-import { AttendanceSummary } from "../services/attendanceService";
+import { getAttendanceSummary, AttendanceSummary } from "../services/attendanceService";
 import { fetchGrades, Grade } from "../services/gradeService";
+import { getGradeSubjectRelations, getSubjectDetails } from "../services/subjectServices";
+import { getAllProfessorSubjects } from "../services/professorSubjectService";
+import { getUserById } from "../services/userService";
 import { Picker } from "@react-native-picker/picker";
-import axios from "axios";
-import { getUsersByRole } from "../services/userService";
 
 const screenWidth = Dimensions.get("window").width;
 
-const API_BASE_URL = "https://backend-fastapi-ten.vercel.app";
+const FECHA_OPTIONS = [
+  { label: "Hoy", value: "hoy" },
+  { label: "Ayer", value: "ayer" },
+  { label: "Hace 5 días", value: "5dias" },
+  { label: "Hace 10 días", value: "10dias" },
+  { label: "Hace 15 días", value: "15dias" },
+  { label: "Hasta hoy", value: "hastaHoy" },
+];
+
+function getDateRange(option: string) {
+  const today = new Date();
+  let start: Date, end: Date;
+  switch (option) {
+    case "hoy":
+      start = new Date(today);
+      end = new Date(today);
+      break;
+    case "ayer":
+      start = new Date(today);
+      start.setDate(today.getDate() - 1);
+      end = new Date(start);
+      break;
+    case "5dias":
+      start = new Date(today);
+      start.setDate(today.getDate() - 5);
+      end = new Date(today);
+      break;
+    case "10dias":
+      start = new Date(today);
+      start.setDate(today.getDate() - 10);
+      end = new Date(today);
+      break;
+    case "15dias":
+      start = new Date(today);
+      start.setDate(today.getDate() - 15);
+      end = new Date(today);
+      break;
+    case "hastaHoy":
+      start = new Date(0);
+      end = new Date(today);
+      break;
+    default:
+      start = new Date(0);
+      end = new Date(today);
+  }
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
 
 const AttendanceChart = () => {
-  const [summary, setSummary] = useState<AttendanceSummary[]>([]);
   const [grades, setGrades] = useState<Grade[]>([]);
-  const [professors, setProfessors] = useState<any[]>([]);
+  const [gradeRelations, setGradeRelations] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [selectedGrade, setSelectedGrade] = useState<string>("todos");
-  const [selectedProfessor, setSelectedProfessor] = useState<string>("todos");
-  const [selectedSubject, setSelectedSubject] = useState<string>("todos");
-  const [selectedTurn, setSelectedTurn] = useState<string>("todos");
+  const [professorSubjects, setProfessorSubjects] = useState<any[]>([]);
+  const [professors, setProfessors] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceSummary[]>([]);
+  const [selectedGrade, setSelectedGrade] = useState<string>("");
+  const [selectedSubjectRelationId, setSelectedSubjectRelationId] = useState<string>("");
+  const [selectedProfessorId, setSelectedProfessorId] = useState<string>("");
+  const [selectedTurn, setSelectedTurn] = useState<string>("");
   const [selectedEstado, setSelectedEstado] = useState<string>("todos");
+  const [selectedFecha, setSelectedFecha] = useState<string>("hoy");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loadingProfessors, setLoadingProfessors] = useState(false);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
   const rowsPerPage = 10;
 
-  // Cargar datos iniciales
+  // Cargar grados al inicio y setear el primero por defecto
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Grados
-        const gradeData = await fetchGrades();
-        setGrades(gradeData);
-
-        // Filtrar solo usuarios con rol profesor
-        const profRes = await getUsersByRole("profesor");
-        setProfessors(profRes.data);
-
-        // Materias
-        const subjRes = await axios.get(`${API_BASE_URL}/subjects`);
-        setSubjects(subjRes.data);
-
-        // Asistencias
-        const attendanceData = await getAttendanceSummary();
-        setSummary(attendanceData);
-      } catch (error) {
-        console.error("Error loading data:", error);
-      }
-    };
-    fetchData();
+    fetchGrades().then((grades) => {
+      setGrades(grades);
+      if (grades.length > 0) setSelectedGrade(grades[0].id);
+    });
+    getAttendanceSummary().then(setAttendance);
   }, []);
 
-  // Filtros dinámicos
-  const filteredSummary = summary.filter((item) => {
-    let match = true;
-    if (selectedGrade !== "todos" && item.gradoId !== selectedGrade) match = false;
-    if (selectedProfessor !== "todos" && item.id !== selectedProfessor) match = false;
-    if (selectedSubject !== "todos" && item.materiaId !== selectedSubject) match = false;
-    if (selectedTurn !== "todos") {
-      const grade = grades.find((g) => g.id === item.gradoId);
-      if (!grade || grade.turno !== selectedTurn) match = false;
-    }
-    if (selectedEstado !== "todos" && item.estado !== selectedEstado) match = false;
-    return match;
-  });
+  // Cargar relaciones grado-materia al cambiar grado y setear la primera materia por defecto
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      setLoadingSubjects(true);
+      setSubjects([]);
+      if (selectedGrade) {
+        const relations = await getGradeSubjectRelations(selectedGrade);
+        setGradeRelations(relations);
+        // relations: [{id, materiaId, ...}]
+        // Para cada materiaId, obtener el nombre real
+        const subjectPromises = relations.map(async (rel: any) => {
+          const subject = await getSubjectDetails(rel.materiaId);
+          return {
+            id: rel.materiaId,
+            nombre: subject.nombre,
+            materiaGradoId: rel.id,
+          };
+        });
+        const subjectsWithNames = await Promise.all(subjectPromises);
+        setSubjects(subjectsWithNames);
+        if (relations.length > 0) setSelectedSubjectRelationId(relations[0].id);
+        else setSelectedSubjectRelationId("");
+      } else {
+        setGradeRelations([]);
+        setSubjects([]);
+        setSelectedSubjectRelationId("");
+      }
+      setLoadingSubjects(false);
+      setSelectedProfessorId("");
+      setSelectedTurn("");
+    };
+    fetchSubjects();
+  }, [selectedGrade]);
 
-  // Contar estados para gráficos
-  const estadoCounts = filteredSummary.reduce(
+  // Cargar profesores relacionados a la materia-grado seleccionada y setear el primero por defecto
+  useEffect(() => {
+    const fetchProfessors = async () => {
+      setLoadingProfessors(true);
+      setProfessors([]);
+      if (selectedSubjectRelationId) {
+        const allProfSubjects = await getAllProfessorSubjects();
+        const filteredProfSubjects = allProfSubjects.filter(
+          (ps: any) => ps.materiaGradoId === selectedSubjectRelationId
+        );
+        setProfessorSubjects(filteredProfSubjects);
+
+        // Obtener los datos de usuario de cada profesor (sin duplicados)
+        const profs: any[] = [];
+        const profIds = Array.from(new Set(filteredProfSubjects.map((ps: any) => ps.profesorId)));
+        for (const profId of profIds) {
+          try {
+            const res = await getUserById(profId);
+            if (res.success && res.data) {
+              profs.push({ ...res.data });
+            }
+          } catch {}
+        }
+        setProfessors(profs);
+        if (profs.length > 0) setSelectedProfessorId(profs[0].id);
+        else setSelectedProfessorId("");
+        // Turno por defecto
+        if (filteredProfSubjects.length > 0) setSelectedTurn(filteredProfSubjects[0].turno);
+        else setSelectedTurn("");
+      } else {
+        setProfessorSubjects([]);
+        setProfessors([]);
+        setSelectedProfessorId("");
+        setSelectedTurn("");
+      }
+      setLoadingProfessors(false);
+    };
+    fetchProfessors();
+  }, [selectedSubjectRelationId]);
+
+  // Turnos disponibles según materia-grado seleccionada
+  const filteredTurns = useMemo(() => {
+    if (!selectedSubjectRelationId) return [];
+    return professorSubjects.map((ps: any) => ps.turno).filter((v, i, arr) => arr.indexOf(v) === i);
+  }, [professorSubjects, selectedSubjectRelationId]);
+
+  // Filtro principal de asistencia
+  const filteredAttendance = useMemo(() => {
+    let filtered = attendance;
+    if (selectedGrade) filtered = filtered.filter((a) => a.gradoId === selectedGrade);
+    if (selectedSubjectRelationId) {
+      const rel = gradeRelations.find((r) => r.id === selectedSubjectRelationId);
+      if (rel) filtered = filtered.filter((a) => a.materiaId === rel.materiaId);
+    }
+    if (selectedProfessorId) filtered = filtered.filter((a) => a.profesorId === selectedProfessorId);
+    if (selectedTurn) filtered = filtered.filter((a) => {
+      const ps = professorSubjects.find((ps: any) => ps.profesorId === (selectedProfessorId || a.profesorId));
+      return ps ? ps.turno === selectedTurn : true;
+    });
+    if (selectedEstado && selectedEstado !== "todos") filtered = filtered.filter((a) => a.estado === selectedEstado);
+    if (selectedFecha) {
+      const { start, end } = getDateRange(selectedFecha);
+      filtered = filtered.filter((a) => {
+        const fecha = new Date(a.fecha);
+        return fecha >= start && fecha <= end;
+      });
+    }
+    return filtered;
+  }, [
+    attendance,
+    selectedGrade,
+    selectedSubjectRelationId,
+    selectedProfessorId,
+    selectedTurn,
+    selectedEstado,
+    selectedFecha,
+    gradeRelations,
+    professorSubjects,
+  ]);
+
+  // Gráficos
+  const estadoCounts = filteredAttendance.reduce(
     (acc, cur) => {
       acc[cur.estado]++;
       return acc;
@@ -74,34 +210,50 @@ const AttendanceChart = () => {
     { presente: 0, ausente: 0, justificado: 0 }
   );
 
-  // Tabla de inasistencias (solo ausentes si se filtra así)
-  const tableData = filteredSummary
-    .filter(
-      (item) =>
-        item.estado === "ausente" ||
-        selectedEstado === "todos" ||
-        selectedEstado === "ausente"
-    )
-    .map((item) => {
-      const grade = grades.find((g) => g.id === item.gradoId);
-      const subject = subjects.find((s) => s.id === item.materiaId);
-      const professor = professors.find((p) => p.id === item.id);
-      let nombreProfesor = "";
-      if (professor) {
-        nombreProfesor = professor.nombre ? professor.nombre.trim() : "";
-        // Si el nombre ya viene completo, úsalo tal cual
-        // Si quieres mostrar el ID, descomenta la siguiente línea:
-        // nombreProfesor += ` (${professor.id})`;
+  // Título dinámico para los gráficos
+  const chartTitle = useMemo(() => {
+    let parts = [];
+    if (selectedGrade) {
+      const g = grades.find((gr) => gr.id === selectedGrade);
+      if (g) parts.push(g.nombre);
+    }
+    if (selectedSubjectRelationId) {
+      const rel = gradeRelations.find((r) => r.id === selectedSubjectRelationId);
+      if (rel) {
+        const subj = subjects.find((s) => s.materiaGradoId === rel.id);
+        if (subj) parts.push(`en la materia de ${subj.nombre}`);
       }
-      return {
-        alumno: item.nombreAlumno,
-        grado: grade ? grade.nombre : "",
-        turno: grade ? grade.turno : "",
-        materia: subject ? subject.nombre : "",
-        profesor: nombreProfesor,
-        fecha: new Date(item.fecha).toLocaleDateString(),
-      };
-    });
+    }
+    if (selectedProfessorId) {
+      const p = professors.find((pr) => pr.id === selectedProfessorId);
+      if (p) parts.push(`con el profesor ${p.nombre?.trim()}`);
+    }
+    if (selectedTurn) parts.push(`turno ${selectedTurn}`);
+    if (selectedFecha) {
+      const fechaLabel = FECHA_OPTIONS.find(f => f.value === selectedFecha)?.label;
+      if (fechaLabel) parts.push(`(${fechaLabel})`);
+    }
+    return "Asistencias" + (parts.length ? " de " + parts.join(" ") : "");
+  }, [selectedGrade, selectedSubjectRelationId, selectedProfessorId, selectedTurn, selectedFecha, grades, gradeRelations, professors, subjects]);
+
+  // Tabla de detalles
+  const tableData = filteredAttendance.map((item) => {
+    const grade = grades.find((g) => g.id === item.gradoId);
+    const rel = gradeRelations.find((r) => r.materiaId === item.materiaId);
+    const subj = subjects.find((s) => s.id === item.materiaId);
+    const subjectName = subj ? subj.nombre : "";
+    const professor = professors.find((p) => p.id === item.profesorId);
+    let nombreProfesor = professor ? professor.nombre?.trim() : "";
+    return {
+      alumno: item.nombreAlumno,
+      grado: grade ? grade.nombre : "",
+      turno: grade ? grade.turno : "",
+      materia: subjectName,
+      profesor: nombreProfesor,
+      estado: item.estado,
+      fecha: new Date(item.fecha).toLocaleDateString(),
+    };
+  });
 
   // Paginación
   const totalPages = Math.ceil(tableData.length / rowsPerPage);
@@ -110,60 +262,77 @@ const AttendanceChart = () => {
     currentPage * rowsPerPage
   );
 
-  // Obtener turnos únicos de los grados
-  const uniqueTurns = Array.from(new Set(grades.map((g) => g.turno)));
-
-  // Resetear página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedGrade, selectedProfessor, selectedSubject, selectedTurn, selectedEstado]);
+  }, [selectedGrade, selectedSubjectRelationId, selectedProfessorId, selectedTurn, selectedEstado, selectedFecha]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Resumen de Asistencias</Text>
-
+      
       {/* Filtros */}
       <View style={styles.filtersContainer}>
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Profesor:</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedProfessor}
-              style={styles.picker}
-              onValueChange={setSelectedProfessor}
-              itemStyle={styles.pickerItem}
-              mode="dropdown"
-            >
-              <Picker.Item label="Todos" value="todos" />
-              {professors.map((prof) => (
-                <Picker.Item
-                  key={prof.id}
-                  label={
-                    prof.nombre
-                      ? prof.nombre.trim()
-                      : ""
-                  }
-                  value={prof.id}
-                />
-              ))}
-            </Picker>
-          </View>
-        </View>
         <View style={styles.filterRow}>
           <Text style={styles.filterLabel}>Grado:</Text>
           <View style={styles.pickerWrapper}>
             <Picker
               selectedValue={selectedGrade}
               style={styles.picker}
-              onValueChange={setSelectedGrade}
+              onValueChange={(v) => setSelectedGrade(v)}
               itemStyle={styles.pickerItem}
               mode="dropdown"
             >
-              <Picker.Item label="Todos" value="todos" />
               {grades.map((grade) => (
                 <Picker.Item key={grade.id} label={grade.nombre} value={grade.id} />
               ))}
             </Picker>
+          </View>
+        </View>
+        <View style={styles.filterRow}>
+          <Text style={styles.filterLabel}>Materia:</Text>
+          <View style={styles.pickerWrapper}>
+            {loadingSubjects ? (
+              <ActivityIndicator size="small" color="#007bff" />
+            ) : (
+              <Picker
+                selectedValue={selectedSubjectRelationId}
+                style={styles.picker}
+                onValueChange={(v) => setSelectedSubjectRelationId(v)}
+                itemStyle={styles.pickerItem}
+                mode="dropdown"
+              >
+                {subjects.map((subject) => (
+                  <Picker.Item
+                    key={subject.materiaGradoId}
+                    label={subject.nombre}
+                    value={subject.materiaGradoId}
+                  />
+                ))}
+              </Picker>
+            )}
+          </View>
+        </View>
+        <View style={styles.filterRow}>
+          <Text style={styles.filterLabel}>Profesor:</Text>
+          <View style={styles.pickerWrapper}>
+            {loadingProfessors ? (
+              <ActivityIndicator size="small" color="#007bff" />
+            ) : (
+              <Picker
+                selectedValue={selectedProfessorId}
+                style={styles.picker}
+                onValueChange={(v) => setSelectedProfessorId(v)}
+                itemStyle={styles.pickerItem}
+                mode="dropdown"
+              >
+                {professors.map((prof) => (
+                  <Picker.Item
+                    key={prof.id}
+                    label={prof.nombre ? prof.nombre.trim() : ""}
+                    value={prof.id}
+                  />
+                ))}
+              </Picker>
+            )}
           </View>
         </View>
         <View style={styles.filterRow}>
@@ -172,30 +341,12 @@ const AttendanceChart = () => {
             <Picker
               selectedValue={selectedTurn}
               style={styles.picker}
-              onValueChange={setSelectedTurn}
+              onValueChange={(v) => setSelectedTurn(v)}
               itemStyle={styles.pickerItem}
               mode="dropdown"
             >
-              <Picker.Item label="Todos" value="todos" />
-              {Array.from(new Set(grades.map((g) => g.turno))).map((turno) => (
+              {filteredTurns.map((turno) => (
                 <Picker.Item key={turno} label={turno} value={turno} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Materia:</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedSubject}
-              style={styles.picker}
-              onValueChange={setSelectedSubject}
-              itemStyle={styles.pickerItem}
-              mode="dropdown"
-            >
-              <Picker.Item label="Todas" value="todos" />
-              {subjects.map((subject) => (
-                <Picker.Item key={subject.id} label={subject.nombre} value={subject.id} />
               ))}
             </Picker>
           </View>
@@ -206,7 +357,7 @@ const AttendanceChart = () => {
             <Picker
               selectedValue={selectedEstado}
               style={styles.picker}
-              onValueChange={setSelectedEstado}
+              onValueChange={(v) => setSelectedEstado(v)}
               itemStyle={styles.pickerItem}
               mode="dropdown"
             >
@@ -217,9 +368,27 @@ const AttendanceChart = () => {
             </Picker>
           </View>
         </View>
+        <View style={styles.filterRow}>
+          <Text style={styles.filterLabel}>Fecha:</Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedFecha}
+              style={styles.picker}
+              onValueChange={setSelectedFecha}
+              itemStyle={styles.pickerItem}
+              mode="dropdown"
+            >
+              {FECHA_OPTIONS.map((opt) => (
+                <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+              ))}
+            </Picker>
+          </View>
+        </View>
       </View>
+      <Text style={styles.title}>{chartTitle}</Text>
 
-      {/* Gráfico de barras de asistencia general */}
+      {/* Gráfico de barras */}
+      <Text style={styles.graphTitle}>Distribución de Asistencias</Text>
       <BarChart
         data={{
           labels: ["Presente", "Ausente", "Justificado"],
@@ -250,7 +419,8 @@ const AttendanceChart = () => {
         showValuesOnTopOfBars
       />
 
-      {/* Gráfico de torta de distribución de estados de asistencia */}
+      {/* Gráfico de torta */}
+      <Text style={styles.graphTitle}>Porcentaje de Estados</Text>
       <PieChart
         data={[
           {
@@ -288,14 +458,15 @@ const AttendanceChart = () => {
         paddingLeft="15"
       />
 
-      {/* Tabla de detalles de inasistencias */}
-      <Text style={styles.subTitle}>Detalles de Inasistencias</Text>
+      {/* Tabla de detalles */}
+      <Text style={styles.subTitle}>Detalles de Asistencias</Text>
       <View style={styles.tableHeader}>
         <Text style={[styles.tableCell, styles.headerCell]}>Alumno</Text>
         <Text style={[styles.tableCell, styles.headerCell]}>Grado</Text>
         <Text style={[styles.tableCell, styles.headerCell]}>Turno</Text>
         <Text style={[styles.tableCell, styles.headerCell]}>Materia</Text>
-        {/* <Text style={[styles.tableCell, styles.headerCell]}>Profesor</Text> */}
+        <Text style={[styles.tableCell, styles.headerCell]}>Profesor</Text>
+        <Text style={[styles.tableCell, styles.headerCell]}>Estado</Text>
         <Text style={[styles.tableCell, styles.headerCell]}>Fecha</Text>
       </View>
       {paginatedData.length === 0 ? (
@@ -307,7 +478,8 @@ const AttendanceChart = () => {
             <Text style={styles.tableCell}>{row.grado}</Text>
             <Text style={styles.tableCell}>{row.turno}</Text>
             <Text style={styles.tableCell}>{row.materia}</Text>
-            {/* <Text style={styles.tableCell}>{row.profesor}</Text> */}
+            <Text style={styles.tableCell}>{row.profesor}</Text>
+            <Text style={styles.tableCell}>{row.estado}</Text>
             <Text style={styles.tableCell}>{row.fecha}</Text>
           </View>
         ))

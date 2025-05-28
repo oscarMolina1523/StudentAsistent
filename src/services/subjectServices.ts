@@ -8,6 +8,28 @@ export interface Subject {
   imagenUrl: string;
 }
 
+export interface ProfessorSubject {
+  id: string;
+  materiaGradoId: string;
+  anioEscolar: number;
+  profesorId: string;
+  turno: string;
+}
+
+export const getSubjectsByProfessorId = async (
+  profesorId: string
+): Promise<ProfessorSubject[]> => {
+  try {
+    const response = await axios.get<ProfessorSubject[]>(
+      `${API_BASE_URL}/professor-subjects/${profesorId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching professor subjects:', error);
+    throw error;
+  }
+}
+
 // ----------------------
 // FUNCIONES RELACIONADAS A MATERIA-GRADO
 // ----------------------
