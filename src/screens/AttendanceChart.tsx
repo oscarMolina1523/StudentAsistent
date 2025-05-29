@@ -81,8 +81,20 @@ const AttendanceChart = () => {
   // Cargar grados al inicio y setear el primero por defecto
   useEffect(() => {
     fetchGrades().then((grades) => {
-      setGrades(grades);
-      if (grades.length > 0) setSelectedGrade(grades[0].id);
+      // Ordenar grados de menor a mayor por nombre (ej: 1ro, 2do, ...)
+      const order = [
+        "1ro Primaria",
+        "2do Primaria",
+        "3ro Primaria",
+        "4to Primaria",
+        "5to Primaria",
+        "6to Primaria",
+      ];
+      const sortedGrades = grades.slice().sort((a, b) => {
+        return order.indexOf(a.nombre) - order.indexOf(b.nombre);
+      });
+      setGrades(sortedGrades);
+      if (sortedGrades.length > 0) setSelectedGrade(sortedGrades[0].id);
     });
     getAttendanceSummary().then(setAttendance);
   }, []);
