@@ -332,6 +332,21 @@ const AttendanceChart = () => {
     setCurrentPage(1);
   }, [selectedGrade, selectedSubjectRelationId, selectedProfessorId, selectedTurn, selectedEstado, selectedFecha]);
 
+  // Función para definir color por etiqueta (solo funciona cuando tienes dataset por estado fijo)
+  const getEstadoColor = (estado: string | undefined) => {
+    if (!estado) return (opacity = 1) => `rgba(0, 122, 255, ${opacity})`;
+    switch (estado.toLowerCase()) {
+      case "presente":
+        return (opacity = 1) => `rgba(0, 200, 83, ${opacity})`; // verde
+      case "ausente":
+        return (opacity = 1) => `rgba(244, 67, 54, ${opacity})`; // rojo
+      case "justificado":
+        return (opacity = 1) => `rgba(255, 235, 59, ${opacity})`; // amarillo
+      default:
+        return (opacity = 1) => `rgba(0, 122, 255, ${opacity})`;
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       
@@ -455,7 +470,7 @@ const AttendanceChart = () => {
       <Text style={styles.title}>{chartTitle}</Text>
 
       {/* Gráfico de barras */}
-      <Text style={styles.graphTitle}>Distribución de Asistencias</Text>
+      <Text style={styles.paginationText}>Distribución de Asistencias</Text>
       {chartData ? (
         <BarChart
           data={{
@@ -475,9 +490,15 @@ const AttendanceChart = () => {
             backgroundGradientFrom: "#f0f0f0",
             backgroundGradientTo: "#e0e0e0",
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+            color: (opacity = 1, index) => {
+              // Si tienes chartData y estado específico, usa el color del estado
+              if (selectedEstado !== "todos") return getEstadoColor(selectedEstado)(opacity);
+              // Si no, alterna colores (verde, rojo, amarillo)
+              const estados = ["presente", "ausente", "justificado"];
+              return getEstadoColor(estados[index % 3])(opacity);
+            },
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            propsForLabels: { angle: 45, dx: 10, dy: 10, textAnchor: 'start' },
+            formatXLabel: (label) => label.split("").join("\n"), 
           }}
           style={styles.chart}
           fromZero
@@ -506,8 +527,12 @@ const AttendanceChart = () => {
             backgroundGradientFrom: "#f0f0f0",
             backgroundGradientTo: "#e0e0e0",
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+            color: (opacity = 1, index) => {
+              const estados = ["presente", "ausente", "justificado"];
+              return getEstadoColor(estados[index])(opacity);
+            },
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            formatXLabel: (label) => label.split("").join("\n"), // Simula diagonal
           }}
           style={styles.chart}
           fromZero
