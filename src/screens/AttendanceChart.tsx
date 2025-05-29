@@ -363,7 +363,7 @@ const AttendanceChart = () => {
               mode="dropdown"
             >
               {grades.map((grade) => (
-                <Picker.Item key={grade.id} label={grade.nombre} value={grade.id} />
+                <Picker.Item key={grade.id} label={`${grade.nombre} (${grade.turno})`} value={grade.id} />
               ))}
             </Picker>
           </View>

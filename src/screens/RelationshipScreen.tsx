@@ -214,7 +214,7 @@ const RelationshipScreen = () => {
             {grados.map((grado) => (
               <Picker.Item
                 key={grado.id}
-                label={grado.nombre}
+                label={`${grado.nombre} (${grado.turno})`}
                 value={grado.id}
               />
             ))}
@@ -266,7 +266,8 @@ const RelationshipScreen = () => {
             {grados.map((grado) => (
               <Picker.Item
                 key={grado.id}
-                label={grado.nombre}
+                label={`${grado.nombre} (${grado.turno})`}
+                // label={grado.nombre}
                 value={grado.id}
               />
             ))}
