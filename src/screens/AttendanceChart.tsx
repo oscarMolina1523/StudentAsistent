@@ -532,7 +532,7 @@ const AttendanceChart = () => {
               return getEstadoColor(estados[index])(opacity);
             },
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            formatXLabel: (label) => label.split("").join("\n"), // Simula diagonal
+            formatXLabel: (label) => label.split("").join("\n"), 
           }}
           style={styles.chart}
           fromZero

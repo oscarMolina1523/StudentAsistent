@@ -23,7 +23,6 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Función para ordenar grados numéricamente a partir del campo "nombre"
   const ordenarPorNumero = (grades: any[]) => {
     return grades.sort((a, b) => {
       const numeroA = parseInt(a.nombre);
@@ -54,7 +53,6 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
           );
           const subjects = response.data;
 
-          // Extraer los grados únicos desde las materias
           const uniqueGrades: any[] = [];
           const gradeIds = new Set();
 
@@ -77,6 +75,13 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
     fetchData();
   }, []);
 
+  const matutinoGrades = grades.filter(
+    (grade) => grade.turno?.trim().toLowerCase() === "matutino"
+  );
+  const vespertinoGrades = grades.filter(
+    (grade) => grade.turno?.trim().toLowerCase() === "vespertino"
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -84,6 +89,31 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
       </View>
     );
   }
+
+  const renderGradeSection = (title: string, gradeList: any[]) => (
+    <>
+      {gradeList.length > 0 && <Text style={styles.turnoTitle}>{title}</Text>}
+      <View style={styles.grid}>
+        {gradeList.map((grade) => (
+          <TouchableOpacity
+            key={grade.id}
+            style={styles.gradeCard}
+            onPress={() =>
+              navigation.navigate("SubjectsByGradeScreen", {
+                gradeId: grade.id,
+              })
+            }
+          >
+            <Image
+              source={{ uri: grade.imagenUrl }}
+              style={styles.gradeImage}
+            />
+            <Text style={styles.gradeText}>{grade.nombre}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </>
+  );
 
   return (
     <ImageBackground
@@ -94,35 +124,18 @@ const HomeScreen = ({ navigation }: { navigation: HomeScreenNavigationProp }) =>
     >
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Bienvenido nuevamente!</Text>
-        <View style={styles.grid}>
-          {grades.length === 0 ? (
-            // Si no hay grados, mostramos el mensaje
-            <View style={styles.noGradesContainer}>
-              <Text style={styles.noGradesText}>
-                Aún no se te ha asignado nada
-              </Text>
-            </View>
-          ) : (
-            // Si hay grados, mostramos los botones
-            grades.map((grade) => (
-              <TouchableOpacity
-                key={grade.id}
-                style={styles.gradeCard}
-                onPress={() =>
-                  navigation.navigate("SubjectsByGradeScreen", {
-                    gradeId: grade.id,
-                  })
-                }
-              >
-                <Image
-                  source={{ uri: grade.imagenUrl }}
-                  style={styles.gradeImage}
-                />
-                <Text style={styles.gradeText}>{grade.nombre}</Text>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
+        {grades.length === 0 ? (
+          <View style={styles.noGradesContainer}>
+            <Text style={styles.noGradesText}>
+              Aún no se te ha asignado nada
+            </Text>
+          </View>
+        ) : (
+          <>
+            {renderGradeSection("Turno Matutino", matutinoGrades)}
+            {renderGradeSection("Turno Vespertino", vespertinoGrades)}
+          </>
+        )}
       </ScrollView>
     </ImageBackground>
   );
@@ -143,6 +156,13 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+  },
+  turnoTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: "left",
   },
   grid: {
     flexDirection: "row",
@@ -178,7 +198,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  // Estilo para el mensaje cuando no hay grados
   noGradesContainer: {
     flex: 1,
     justifyContent: "center",
