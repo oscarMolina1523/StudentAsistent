@@ -171,7 +171,7 @@ const StudentManagementScreen = () => {
               {grades.map((grade) => (
                 <Picker.Item
                   key={grade.id}
-                  label={grade.nombre}
+                  label={`${grade.nombre} (${grade.turno})`}
                   value={grade.id}
                 />
               ))}
