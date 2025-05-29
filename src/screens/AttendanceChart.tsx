@@ -78,6 +78,10 @@ const AttendanceChart = () => {
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const rowsPerPage = 10;
 
+  // Nuevo estado para controlar si el filtro de estado está habilitado
+  type EstadoType = "todos" | "presente" | "ausente" | "justificado";
+  const [estadoEnabled, setEstadoEnabled] = useState(true);
+
   // Cargar grados al inicio y setear el primero por defecto
   useEffect(() => {
     fetchGrades().then((grades) => {
@@ -179,11 +183,28 @@ const AttendanceChart = () => {
     return professorSubjects.map((ps: any) => ps.turno).filter((v, i, arr) => arr.indexOf(v) === i);
   }, [professorSubjects, selectedSubjectRelationId]);
 
+  // Materias con opción "Todos"
+  const subjectsWithAll = useMemo(() => [
+    { id: "todos", nombre: "Todos", materiaGradoId: "todos" },
+    ...subjects
+  ], [subjects]);
+
+  // Actualizar habilitación del filtro de estado según materia seleccionada
+  useEffect(() => {
+    if (selectedSubjectRelationId === "todos") {
+      setEstadoEnabled(true);
+    } else {
+      setEstadoEnabled(false);
+      setSelectedEstado("todos"); // Reset estado si se selecciona materia específica
+    }
+  }, [selectedSubjectRelationId]);
+
   // Filtro principal de asistencia
   const filteredAttendance = useMemo(() => {
     let filtered = attendance;
     if (selectedGrade) filtered = filtered.filter((a) => a.gradoId === selectedGrade);
-    if (selectedSubjectRelationId) {
+    // Si materia es "todos"
+    if (selectedSubjectRelationId && selectedSubjectRelationId !== "todos") {
       const rel = gradeRelations.find((r) => r.id === selectedSubjectRelationId);
       if (rel) filtered = filtered.filter((a) => a.materiaId === rel.materiaId);
     }
@@ -192,7 +213,6 @@ const AttendanceChart = () => {
       const ps = professorSubjects.find((ps: any) => ps.profesorId === (selectedProfessorId || a.profesorId));
       return ps ? ps.turno === selectedTurn : true;
     });
-    if (selectedEstado && selectedEstado !== "todos") filtered = filtered.filter((a) => a.estado === selectedEstado);
     if (selectedFecha) {
       const { start, end } = getDateRange(selectedFecha);
       filtered = filtered.filter((a) => {
@@ -200,6 +220,14 @@ const AttendanceChart = () => {
         return fecha >= start && fecha <= end;
       });
     }
+    // Si materia es todos y estado es diferente de todos, filtrar por estado
+    if (selectedSubjectRelationId === "todos" && selectedEstado && selectedEstado !== "todos") {
+      filtered = filtered.filter((a) => a.estado === selectedEstado);
+    }
+    // Si materia específica, mostrar todos los estados (no filtrar por estado)
+    // Si materia todos y estado todos, mostrar todos
+    // Si materia todos y estado específico, ya filtrado arriba
+    // Si materia específica, estado se ignora
     return filtered;
   }, [
     attendance,
@@ -213,14 +241,40 @@ const AttendanceChart = () => {
     professorSubjects,
   ]);
 
-  // Gráficos
-  const estadoCounts = filteredAttendance.reduce(
-    (acc, cur) => {
-      acc[cur.estado]++;
-      return acc;
-    },
-    { presente: 0, ausente: 0, justificado: 0 }
-  );
+  // Para gráficos: Si materia es todos y estado específico, agrupar por materia y mostrar solo ese estado
+  const chartData = useMemo(() => {
+    if (selectedSubjectRelationId === "todos" && selectedEstado !== "todos") {
+      // Agrupar por materia y contar solo el estado seleccionado
+      const materiaMap: { [materiaId: string]: number } = {};
+      filteredAttendance.forEach((a) => {
+        if (!materiaMap[a.materiaId]) materiaMap[a.materiaId] = 0;
+        materiaMap[a.materiaId]++;
+      });
+      // Obtener nombres de materias
+      return Object.entries(materiaMap).map(([materiaId, count]) => {
+        const subj = subjects.find((s) => s.id === materiaId);
+        return { nombre: subj ? subj.nombre : materiaId, count };
+      });
+    }
+    // Si materia específica o estado todos, usar la lógica original
+    return null;
+  }, [filteredAttendance, selectedSubjectRelationId, selectedEstado, subjects]);
+
+  // Para gráficos de barras y torta
+  const estadoCounts = useMemo(() => {
+    if (chartData) {
+      // Si materia todos y estado específico, devolver los datos agrupados por materia
+      return chartData;
+    }
+    // Lógica original
+    return filteredAttendance.reduce(
+      (acc: any, cur: any) => {
+        acc[cur.estado]++;
+        return acc;
+      },
+      { presente: 0, ausente: 0, justificado: 0 }
+    );
+  }, [filteredAttendance, chartData]);
 
   // Título dinámico para los gráficos
   const chartTitle = useMemo(() => {
@@ -312,7 +366,7 @@ const AttendanceChart = () => {
                 itemStyle={styles.pickerItem}
                 mode="dropdown"
               >
-                {subjects.map((subject) => (
+                {subjectsWithAll.map((subject) => (
                   <Picker.Item
                     key={subject.materiaGradoId}
                     label={subject.nombre}
@@ -372,6 +426,7 @@ const AttendanceChart = () => {
               onValueChange={(v) => setSelectedEstado(v)}
               itemStyle={styles.pickerItem}
               mode="dropdown"
+              enabled={estadoEnabled}
             >
               <Picker.Item label="Todos" value="todos" />
               <Picker.Item label="Presente" value="presente" />
@@ -401,74 +456,126 @@ const AttendanceChart = () => {
 
       {/* Gráfico de barras */}
       <Text style={styles.graphTitle}>Distribución de Asistencias</Text>
-      <BarChart
-        data={{
-          labels: ["Presente", "Ausente", "Justificado"],
-          datasets: [
-            {
-              data: [
-                estadoCounts.presente,
-                estadoCounts.ausente,
-                estadoCounts.justificado,
-              ],
-            },
-          ],
-        }}
-        width={screenWidth - 40}
-        height={220}
-        yAxisLabel=""
-        yAxisSuffix=""
-        chartConfig={{
-          backgroundColor: "#ffffff",
-          backgroundGradientFrom: "#f0f0f0",
-          backgroundGradientTo: "#e0e0e0",
-          decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        }}
-        style={styles.chart}
-        fromZero
-        showValuesOnTopOfBars
-      />
+      {chartData ? (
+        <BarChart
+          data={{
+            labels: chartData.map((d) => d.nombre),
+            datasets: [
+              {
+                data: chartData.map((d) => d.count),
+              },
+            ],
+          }}
+          width={screenWidth - 40}
+          height={220}
+          yAxisLabel=""
+          yAxisSuffix=""
+          chartConfig={{
+            backgroundColor: "#ffffff",
+            backgroundGradientFrom: "#f0f0f0",
+            backgroundGradientTo: "#e0e0e0",
+            decimalPlaces: 0,
+            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            propsForLabels: { angle: 45, dx: 10, dy: 10, textAnchor: 'start' },
+          }}
+          style={styles.chart}
+          fromZero
+          showValuesOnTopOfBars
+        />
+      ) : (
+        <BarChart
+          data={{
+            labels: ["Presente", "Ausente", "Justificado"],
+            datasets: [
+              {
+                data: [
+                  estadoCounts.presente,
+                  estadoCounts.ausente,
+                  estadoCounts.justificado,
+                ],
+              },
+            ],
+          }}
+          width={screenWidth - 40}
+          height={220}
+          yAxisLabel=""
+          yAxisSuffix=""
+          chartConfig={{
+            backgroundColor: "#ffffff",
+            backgroundGradientFrom: "#f0f0f0",
+            backgroundGradientTo: "#e0e0e0",
+            decimalPlaces: 0,
+            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          }}
+          style={styles.chart}
+          fromZero
+          showValuesOnTopOfBars
+        />
+      )}
 
       {/* Gráfico de torta */}
       <Text style={styles.graphTitle}>Porcentaje de Estados</Text>
-      <PieChart
-        data={[
-          {
-            name: "Presente",
-            population: estadoCounts.presente,
-            color: "green",
+      {chartData ? (
+        <PieChart
+          data={chartData.map((d, i) => ({
+            name: d.nombre,
+            population: d.count,
+            color: ["#4caf50", "#f44336", "#ffeb3b", "#2196f3", "#9c27b0"][i % 5],
             legendFontColor: "#7F7F7F",
             legendFontSize: 15,
-          },
-          {
-            name: "Ausente",
-            population: estadoCounts.ausente,
-            color: "red",
-            legendFontColor: "#7F7F7F",
-            legendFontSize: 15,
-          },
-          {
-            name: "Justificado",
-            population: estadoCounts.justificado,
-            color: "yellow",
-            legendFontColor: "#7F7F7F",
-            legendFontSize: 15,
-          },
-        ]}
-        width={screenWidth - 40}
-        height={220}
-        chartConfig={{
-          backgroundColor: "#ffffff",
-          backgroundGradientFrom: "#f0f0f0",
-          backgroundGradientTo: "#e0e0e0",
-          color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
-        }}
-        accessor="population"
-        backgroundColor="transparent"
-        paddingLeft="15"
-      />
+          }))}
+          width={screenWidth - 40}
+          height={220}
+          chartConfig={{
+            backgroundColor: "#ffffff",
+            backgroundGradientFrom: "#f0f0f0",
+            backgroundGradientTo: "#e0e0e0",
+            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          }}
+          accessor="population"
+          backgroundColor="transparent"
+          paddingLeft="15"
+        />
+      ) : (
+        <PieChart
+          data={[
+            {
+              name: "Presente",
+              population: estadoCounts.presente,
+              color: "green",
+              legendFontColor: "#7F7F7F",
+              legendFontSize: 15,
+            },
+            {
+              name: "Ausente",
+              population: estadoCounts.ausente,
+              color: "red",
+              legendFontColor: "#7F7F7F",
+              legendFontSize: 15,
+            },
+            {
+              name: "Justificado",
+              population: estadoCounts.justificado,
+              color: "yellow",
+              legendFontColor: "#7F7F7F",
+              legendFontSize: 15,
+            },
+          ]}
+          width={screenWidth - 40}
+          height={220}
+          chartConfig={{
+            backgroundColor: "#ffffff",
+            backgroundGradientFrom: "#f0f0f0",
+            backgroundGradientTo: "#e0e0e0",
+            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          }}
+          accessor="population"
+          backgroundColor="transparent"
+          paddingLeft="15"
+        />
+      )}
 
       {/* Tabla de detalles */}
       <Text style={styles.subTitle}>Detalles de Asistencias</Text>
