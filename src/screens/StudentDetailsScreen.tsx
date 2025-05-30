@@ -9,6 +9,7 @@ import {
   Modal,
   Button,
   TextInput,
+  Alert,
 } from "react-native";
 import { getStudentsBySubjectGrade } from "../services/studentService";
 import { markAttendance } from "../services/attendanceService";
@@ -32,18 +33,62 @@ const StudentDetailsScreen = ({ route }: any) => {
   const [justifyStudentId, setJustifyStudentId] = useState<string | null>(null);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [customReason, setCustomReason] = useState<string>("");
+  // Estado para las asistencias seleccionadas antes de guardar
+  const [attendanceDraft, setAttendanceDraft] = useState<Record<string, "presente" | "ausente" | "justificado" | null>>({});
+  // Nuevo estado para controlar si la asistencia de hoy ya fue tomada
+  const [attendanceTakenToday, setAttendanceTakenToday] = useState(false);
+  const [loading, setLoading] = useState(true);
+  // Estado para motivos de justificación por estudiante
+  const [justificationReasons, setJustificationReasons] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const data = await getStudentsBySubjectGrade(materiaGradoId);
         const materia = await getMateriaIdByMateriaGradoId(materiaGradoId);
         setMateriaId(materia);
+        let allHaveStatus = true;
+        let parsedStatuses: Record<string, string> = {};
         if (materia) {
-          await loadStatusesFromStorage(data, materia);
+          // Cargar status de storage para hoy
+          const today = new Date().toISOString().split("T")[0];
+          const key = `statuses:${materia}:${today}`;
+          const storedStatuses = await AsyncStorage.getItem(key);
+          parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
+          // Actualizar students con status real de storage
+          const updatedStudents = data.map((student: Student) => ({
+            ...student,
+            status: parsedStatuses[student.id] || null,
+          }));
+          setStudents(updatedStudents);
+          // Verificar si todos tienen status
+          for (const student of updatedStudents) {
+            if (!student.status) {
+              allHaveStatus = false;
+              break;
+            }
+          }
+        } else {
+          setStudents(data);
+          allHaveStatus = false;
         }
+        // Draft solo si no se ha tomado asistencia
+        if (!allHaveStatus) {
+          const draft: Record<string, "presente" | "ausente" | "justificado" | null> = {};
+          data.forEach((student: any) => {
+            const val = parsedStatuses[student.id];
+            draft[student.id] = val === "presente" || val === "ausente" || val === "justificado" ? val : null;
+          });
+          setAttendanceDraft(draft);
+        } else {
+          setAttendanceDraft({});
+        }
+        setAttendanceTakenToday(allHaveStatus);
       } catch (error) {
         console.error("Error fetching students or materiaId:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -118,8 +163,8 @@ const StudentDetailsScreen = ({ route }: any) => {
         alumnoId: studentId,
         materiaId,
         fecha,
-        estado,
-        justificacion: estado === "justificado" ? "Falta justificada" : "",
+        estado: estado as "presente" | "ausente" | "justificado",
+        justificacion: estado === "justificado" ? "Falta justificada" : undefined,
         registradoPor,
         horaRegistro,
       };
@@ -151,50 +196,70 @@ const StudentDetailsScreen = ({ route }: any) => {
     }
   };
 
-  const handleSaveJustification = async () => {
-    if (!justifyStudentId || !materiaId) return;
+  // Cambiar selección de asistencia en el draft
+  const handleDraftChange = (studentId: string, estado: "presente" | "ausente" | "justificado") => {
+    if (estado === "justificado") {
+      setJustifyStudentId(studentId);
+      setShowJustifyModal(true);
+      setSelectedReason(justificationReasons[studentId] || "");
+      setCustomReason("");
+    } else {
+      setAttendanceDraft((prev) => ({ ...prev, [studentId]: prev[studentId] === estado ? null : estado }));
+      // Si cambia a otro estado, limpiar motivo
+      setJustificationReasons((prev) => {
+        const copy = { ...prev };
+        delete copy[studentId];
+        return copy;
+      });
+    }
+  };
+
+  // Guardar motivo de justificación en el draft
+  const handleSaveJustification = () => {
+    if (!justifyStudentId) return;
     let motivo = selectedReason === "Otro" ? customReason : selectedReason;
     if (!motivo) motivo = "Justificación no especificada";
+    setAttendanceDraft((prev) => ({ ...prev, [justifyStudentId!]: "justificado" }));
+    setJustificationReasons((prev) => ({ ...prev, [justifyStudentId!]: motivo }));
+    setShowJustifyModal(false);
+    setJustifyStudentId(null);
+    setSelectedReason("");
+    setCustomReason("");
+  };
 
+  // Guardar todas las asistencias seleccionadas
+  const handleSaveAllAttendance = async () => {
+    if (!materiaId) return;
+    const toSend = Object.entries(attendanceDraft).filter(([_id, estado]) => estado === "presente" || estado === "ausente" || estado === "justificado");
+    if (toSend.length === 0) {
+      Alert.alert("Atención", "Selecciona al menos una asistencia antes de guardar.");
+      return;
+    }
     try {
       const now = new Date();
       const fecha = now.toISOString();
       const horaRegistro = now.toTimeString().split(" ")[0];
-      const registradoPor =
-        (await AsyncStorage.getItem("userId")) || "desconocido";
-
-      const attendanceData = {
-        alumnoId: justifyStudentId,
-        materiaId,
-        fecha,
-        estado: "justificado",
-        justificacion: motivo,
-        registradoPor,
-        horaRegistro,
-      };
-
-      const response = await markAttendance(attendanceData);
-
-      if (response.message === "Attendance recorded successfully") {
-        await saveStatusToStorage(justifyStudentId, "justificado", materiaId);
-
-        setStudents((prev) =>
-          prev.map((student) =>
-            student.id === justifyStudentId
-              ? { ...student, status: "justificado" }
-              : student
-          )
-        );
-      } else {
-        console.error("Error al registrar la asistencia:", response.message);
+      const registradoPor = (await AsyncStorage.getItem("userId")) || "desconocido";
+      for (const [studentId, estado] of toSend) {
+        const typedEstado = estado as "presente" | "ausente" | "justificado";
+        const attendanceData = {
+          alumnoId: studentId,
+          materiaId,
+          fecha,
+          estado: typedEstado,
+          justificacion: typedEstado === "justificado" ? (justificationReasons[studentId] || "Justificación no especificada") : undefined,
+          registradoPor,
+          horaRegistro,
+        };
+        await markAttendance(attendanceData);
+        await saveStatusToStorage(studentId, typedEstado, materiaId);
       }
+      setStudents((prev) => prev.map((student) => ({ ...student, status: attendanceDraft[student.id] || undefined })));
+      setAttendanceTakenToday(true); // Bloquear toma de asistencia inmediatamente
+      Alert.alert("Éxito", "Asistencia tomada con éxito");
     } catch (error) {
-      console.error("Error al registrar asistencia:", error);
-    } finally {
-      setShowJustifyModal(false);
-      setJustifyStudentId(null);
-      setSelectedReason("");
-      setCustomReason("");
+      Alert.alert("Error", "Ocurrió un error al guardar la asistencia");
+      console.error(error);
     }
   };
 
@@ -210,60 +275,84 @@ const StudentDetailsScreen = ({ route }: any) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Estudiantes de la Materia</Text>
-      <FlatList
-        data={students}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.studentContainer}>
-            <View style={styles.studentRow}>
-              <Text style={styles.studentName}>
-                {item.nombre} {item.apellido}
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Text>Cargando estudiantes...</Text>
+        </View>
+      ) : (
+        <>
+          {attendanceTakenToday && (
+            <View style={{ marginBottom: 16, backgroundColor: '#e0e0e0', padding: 12, borderRadius: 8 }}>
+              <Text style={{ color: '#888', textAlign: 'center', fontWeight: 'bold' }}>
+                La asistencia de hoy ya fue tomada. Podrás registrar de nuevo mañana.
               </Text>
-              <View style={styles.optionsContainer}>
-                {!item.status && (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => handleStatusChange(item.id, "presente")}
-                    >
-                      <Image
-                        source={{ uri: imageUrls.presente }}
-                        style={styles.optionImage}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleStatusChange(item.id, "ausente")}
-                    >
-                      <Image
-                        source={{ uri: imageUrls.ausente }}
-                        style={styles.optionImage}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleStatusChange(item.id, "justificado")}
-                    >
-                      <Image
-                        source={{ uri: imageUrls.justificado }}
-                        style={styles.optionImage}
-                      />
-                    </TouchableOpacity>
-                  </>
-                )}
-                {item.status && (
-                  <Image
-                    source={{
-                      uri: imageUrls[item.status as keyof typeof imageUrls],
-                    }}
-                    style={[
-                      styles.optionImage,
-                      { borderColor: "green", borderWidth: 2, borderRadius: 5 },
-                    ]}
-                  />
-                )}
-              </View>
             </View>
-          </View>
-        )}
-      />
+          )}
+          <FlatList
+            data={students}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.studentContainer}>
+                <View style={styles.studentRow}>
+                  <Text style={styles.studentName}>
+                    {item.nombre} {item.apellido}
+                  </Text>
+                  <View style={styles.optionsContainer}>
+                    {!attendanceTakenToday && (["presente", "ausente", "justificado"].map((estado) => (
+                      <TouchableOpacity
+                        key={estado}
+                        style={{
+                          marginLeft: 10,
+                          borderWidth: 2,
+                          borderColor: attendanceDraft[item.id] === estado ? "#339999" : "#ccc",
+                          borderRadius: 5,
+                          padding: 2,
+                          backgroundColor: attendanceDraft[item.id] === estado ? "#e0f7fa" : "#fff",
+                        }}
+                        onPress={() => handleDraftChange(item.id, estado as any)}
+                      >
+                        <Image
+                          source={{ uri: imageUrls[estado as keyof typeof imageUrls] }}
+                          style={styles.optionImage}
+                        />
+                        <Text style={{ fontSize: 10, textAlign: "center" }}>{estado.charAt(0).toUpperCase() + estado.slice(1)}</Text>
+                      </TouchableOpacity>
+                    )))}
+                    {attendanceTakenToday && item.status && (
+                      <Image
+                        source={{ uri: imageUrls[item.status as keyof typeof imageUrls] }}
+                        style={[
+                          styles.optionImage,
+                          { borderColor: "green", borderWidth: 2, borderRadius: 5 },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </View>
+              </View>
+            )}
+          />
+          {/* Botón para guardar asistencia al final */}
+          {!attendanceTakenToday && (
+            <TouchableOpacity
+              style={[
+                styles.button,
+                { alignSelf: "center", width: 220, marginTop: 10 },
+              ]}
+              onPress={handleSaveAllAttendance}
+            >
+              <Text style={styles.buttonText}>Guardar asistencia</Text>
+            </TouchableOpacity>
+          )}
+          {attendanceTakenToday && (
+            <View style={{ marginTop: 16, backgroundColor: '#e0e0e0', padding: 12, borderRadius: 8 }}>
+              <Text style={{ color: '#888', textAlign: 'center', fontWeight: 'bold' }}>
+                La asistencia de hoy ya fue tomada. Podrás registrar de nuevo mañana.
+              </Text>
+            </View>
+          )}
+        </>
+      )}
       {/* Modal para justificación */}
       <Modal
         visible={showJustifyModal}
@@ -288,8 +377,7 @@ const StudentDetailsScreen = ({ route }: any) => {
             <TouchableOpacity
               style={[
                 styles.reasonOption,
-                selectedReason === "Problema familiar" &&
-                  styles.selectedReasonOption,
+                selectedReason === "Problema familiar" && styles.selectedReasonOption,
               ]}
               onPress={() => setSelectedReason("Problema familiar")}
             >
@@ -313,24 +401,12 @@ const StudentDetailsScreen = ({ route }: any) => {
               />
             )}
             <View style={styles.modalButtons}>
-              {/* <Button
-                title="Cancelar"
-                onPress={() => setShowJustifyModal(false)}
-              /> */}
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: "red" }]}
                 onPress={() => setShowJustifyModal(false)}
               >
                 <Text style={styles.buttonText}>Cancelar</Text>
               </TouchableOpacity>
-              {/* <Button
-                title="Guardar"
-                onPress={handleSaveJustification}
-                disabled={
-                  !selectedReason ||
-                  (selectedReason === "Otro" && !customReason.trim())
-                }
-              /> */}
               <TouchableOpacity
                 style={styles.button}
                 onPress={handleSaveJustification}
