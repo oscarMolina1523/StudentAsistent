@@ -471,39 +471,41 @@ const AttendanceChart = () => {
 
       {/* Gráfico de barras */}
       <Text style={styles.paginationText}>Distribución de Asistencias</Text>
-      {chartData ? (
-        <BarChart
-          data={{
-            labels: chartData.map((d) => d.nombre),
-            datasets: [
-              {
-                data: chartData.map((d) => d.count),
+      {chartData && chartData.length > 0  ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <BarChart
+            data={{
+              labels: chartData.map((d) => d.nombre),
+              datasets: [
+                {
+                  data: chartData.map((d) => d.count),
+                },
+              ],
+            }}
+            width={screenWidth - 40}
+            height={220}
+            yAxisLabel=""
+            yAxisSuffix=""
+            chartConfig={{
+              backgroundColor: "#ffffff",
+              backgroundGradientFrom: "#f0f0f0",
+              backgroundGradientTo: "#e0e0e0",
+              decimalPlaces: 0,
+              color: (opacity = 1, index) => {
+                // Si tienes chartData y estado específico, usa el color del estado
+                if (selectedEstado !== "todos") return getEstadoColor(selectedEstado)(opacity);
+                // Si no, alterna colores (verde, rojo, amarillo)
+                const estados = ["presente", "ausente", "justificado"];
+                return getEstadoColor(estados[index % 3])(opacity);
               },
-            ],
-          }}
-          width={screenWidth - 40}
-          height={220}
-          yAxisLabel=""
-          yAxisSuffix=""
-          chartConfig={{
-            backgroundColor: "#ffffff",
-            backgroundGradientFrom: "#f0f0f0",
-            backgroundGradientTo: "#e0e0e0",
-            decimalPlaces: 0,
-            color: (opacity = 1, index) => {
-              // Si tienes chartData y estado específico, usa el color del estado
-              if (selectedEstado !== "todos") return getEstadoColor(selectedEstado)(opacity);
-              // Si no, alterna colores (verde, rojo, amarillo)
-              const estados = ["presente", "ausente", "justificado"];
-              return getEstadoColor(estados[index % 3])(opacity);
-            },
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            formatXLabel: (label) => label.split("").join("\n"), 
-          }}
-          style={styles.chart}
-          fromZero
-          showValuesOnTopOfBars
-        />
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              formatXLabel: (label) => label.split("").join("\n"), 
+            }}
+            style={styles.chart}
+            fromZero
+            showValuesOnTopOfBars
+          />
+        </ScrollView>
       ) : (
         <BarChart
           data={{
