@@ -4,20 +4,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../Navigation";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Asegúrate de tener AsyncStorage importado
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CustomMenu = () => {
   const [visible, setVisible] = useState(false);
-  const [role, setRole] = useState<string>(''); // Para almacenar el rol del usuario
+  const [role, setRole] = useState<string>(''); // Para almacenar el rol del usuario ya sea admin , tutor o profesor
   const navigation = useNavigation<NavigationProp>();
 
   // Obtener el rol del usuario cuando se monta el componente
   useEffect(() => {
     const loadRole = async () => {
-      const storedRole = await AsyncStorage.getItem("userRole"); // Obtiene el rol del usuario desde AsyncStorage
-      if (storedRole) setRole(storedRole); // Si tiene un rol, lo guarda en el estado
+      const storedRole = await AsyncStorage.getItem("userRole"); 
+      if (storedRole) setRole(storedRole); 
     };
     loadRole();
   }, []);
