@@ -1,14 +1,8 @@
 // services/professorSubjectService.ts
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
+import { ProfessorSubject } from '../models/Models';
 
-export interface ProfessorSubject {
-  id: string;
-  materiaGradoId: string;
-  anioEscolar: number;
-  profesorId: string;
-  turno: string;
-}
 
 // Obtener estudiantes y el materiaProfesorId asociado con una materia
 export const getStudentsInSubject = async (materiaGradoId: string) => {
