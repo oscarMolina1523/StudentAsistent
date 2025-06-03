@@ -471,7 +471,7 @@ const AttendanceChart = () => {
       <Text style={styles.title}>{chartTitle}</Text>
 
       {/* Gráfico de barras */}
-      <Text style={styles.paginationText}>Distribución de Asistencias</Text>
+      <Text style={styles.title}>Distribución de Asistencias</Text>
       {chartData && chartData.length > 0  ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <BarChart
@@ -544,7 +544,7 @@ const AttendanceChart = () => {
       )}
 
       {/* Gráfico de torta */}
-      <Text style={styles.graphTitle}>Porcentaje de Estados</Text>
+      <Text style={styles.title}>Porcentaje de Estados</Text>
       {chartData ? (
         <PieChart
           data={chartData.map((d, i) => ({
