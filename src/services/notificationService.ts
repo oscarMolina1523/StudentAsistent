@@ -1,9 +1,8 @@
-let notifications = [];
+let notifications : any [];
 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE_URL = 'https://backend-fastapi-ten.vercel.app';
+import { API_BASE_URL } from '../utils/constants';
 
 export const getNotifications = async () => {
   try {
@@ -17,7 +16,7 @@ export const getNotifications = async () => {
       return allNotifications; // Admin ve todas
     }
 
-    // Tutor solo ve las suyas
+    // Los tutores ven solo las de sus hijos
     const filtered = allNotifications.filter(
       (notification: any) => notification.tutorId === userId
     );
