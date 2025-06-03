@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, Dimensions, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
-import { getAttendanceSummary, AttendanceSummary } from "../services/attendanceService";
-import { fetchGrades, Grade } from "../services/gradeService";
+import { getAttendanceSummary} from "../services/attendanceService";
+import { fetchGrades } from "../services/gradeService";
 import { getGradeSubjectRelations, getSubjectDetails } from "../services/subjectServices";
 import { getAllProfessorSubjects } from "../services/professorSubjectService";
 import { getUserById } from "../services/userService";
 import { Picker } from "@react-native-picker/picker";
+import { AttendanceSummary, Grade } from "../models/Models";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -85,7 +86,7 @@ const AttendanceChart = () => {
   // Cargar grados al inicio y setear el primero por defecto
   useEffect(() => {
     fetchGrades().then((grades) => {
-      // Ordenar grados de menor a mayor por nombre (ej: 1ro, 2do, ...)
+      // Ordenar grados de menor a mayor por nombre 
       const order = [
         "1ro Primaria",
         "2do Primaria",
@@ -123,7 +124,7 @@ const AttendanceChart = () => {
         });
         const subjectsWithNames = await Promise.all(subjectPromises);
         setSubjects(subjectsWithNames);
-        if (relations.length > 0) setSelectedSubjectRelationId(relations[0].id);
+        if (relations.length > 0) setSelectedSubjectRelationId(relations[0].id); 
         else setSelectedSubjectRelationId("");
       } else {
         setGradeRelations([]);
@@ -208,11 +209,11 @@ const AttendanceChart = () => {
       const rel = gradeRelations.find((r) => r.id === selectedSubjectRelationId);
       if (rel) filtered = filtered.filter((a) => a.materiaId === rel.materiaId);
     }
-    if (selectedProfessorId) filtered = filtered.filter((a) => a.profesorId === selectedProfessorId);
-    if (selectedTurn) filtered = filtered.filter((a) => {
-      const ps = professorSubjects.find((ps: any) => ps.profesorId === (selectedProfessorId || a.profesorId));
-      return ps ? ps.turno === selectedTurn : true;
-    });
+    // if (selectedProfessorId) filtered = filtered.filter((a) => a.profesorId === selectedProfessorId);
+    // if (selectedTurn) filtered = filtered.filter((a) => {
+    //   const ps = professorSubjects.find((ps: any) => ps.profesorId === (selectedProfessorId || a.profesorId));
+    //   return ps ? ps.turno === selectedTurn : true;
+    // });
     if (selectedFecha) {
       const { start, end } = getDateRange(selectedFecha);
       filtered = filtered.filter((a) => {
