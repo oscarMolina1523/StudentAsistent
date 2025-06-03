@@ -19,3 +19,26 @@ export interface Grade {
   turno: string;
   imagenUrl: string;
 }
+
+
+export type AttendanceData = {
+  alumnoId: string;
+  materiaId: string;
+  fecha: string;
+  estado: 'presente' | 'ausente' | 'justificado';
+  justificacion?: string;
+  registradoPor: string;
+  horaRegistro: string;
+};
+
+export type AttendanceSummary = {
+  id: string;
+  alumnoId: string;
+  nombreAlumno: string;
+  gradoId: string;
+  materiaId: string;
+  nombreMateria: string;
+  estado: 'presente' | 'ausente' | 'justificado';
+  fecha: string;
+  justificacion: string;
+};
