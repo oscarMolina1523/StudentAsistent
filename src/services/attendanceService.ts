@@ -1,28 +1,7 @@
 // services/attendanceService.ts
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-
-type AttendanceData = {
-  alumnoId: string;
-  materiaId: string;
-  fecha: string;
-  estado: 'presente' | 'ausente' | 'justificado';
-  justificacion?: string;
-  registradoPor: string;
-  horaRegistro: string;
-};
-
-export type AttendanceSummary = {
-  id: string;
-  alumnoId: string;
-  nombreAlumno: string;
-  gradoId: string;
-  materiaId: string;
-  nombreMateria: string;
-  estado: 'presente' | 'ausente' | 'justificado';
-  fecha: string;
-  justificacion: string;
-};
+import { AttendanceData, AttendanceSummary } from '../models/Models';
 
 
 export const markAttendance = async (data: AttendanceData) => {
