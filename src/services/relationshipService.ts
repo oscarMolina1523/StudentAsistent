@@ -80,3 +80,17 @@ export const createCustomRelation = async (url: string, data: any) => {
     };
   }
 };
+
+// Obtener todas las relaciones grado-materia
+export const getAllGradeSubjectRelations = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/grade-subjects`);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error al obtener las relaciones grado-materia',
+    };
+  }
+};
+
