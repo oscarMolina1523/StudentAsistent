@@ -284,16 +284,6 @@ const RelationshipScreen = () => {
         <TouchableOpacity style={[styles.tab, mode==='ver' && styles.tabActive]} onPress={()=>setMode('ver')}><Text style={styles.tabText}>Ver</Text></TouchableOpacity>
         <TouchableOpacity style={[styles.tab, mode==='editar' && styles.tabActive]} onPress={()=>setMode('editar')}><Text style={styles.tabText}>Editar</Text></TouchableOpacity>
       </View>
-
-      {/* Selector de tipo de relación para ver/editar con scroll horizontal */}
-      {(mode==='ver' || mode==='editar') && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16,  }} contentContainerStyle={{ flexDirection: 'row', gap: 10, height: 40 }}>
-          <TouchableOpacity style={[styles.tab, viewRelationType==='professor-subject' && styles.tabActive]} onPress={()=>setViewRelationType('professor-subject')}><Text style={styles.tabText}>Profesor-Materia</Text></TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, viewRelationType==='grade-subject' && styles.tabActive]} onPress={()=>setViewRelationType('grade-subject')}><Text style={styles.tabText}>Grado-Materia</Text></TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, viewRelationType==='tutor-student' && styles.tabActive]} onPress={()=>setViewRelationType('tutor-student')}><Text style={styles.tabText}>Tutor-Alumno</Text></TouchableOpacity>
-        </ScrollView>
-      )}
-
       {/* Crear relaciones */}
       {mode==='crear' && (
         <>
@@ -423,9 +413,20 @@ const RelationshipScreen = () => {
         </>
       )}
 
+      {/* Selector de tipo de relación para ver/editar con scroll horizontal */}
+      {(mode==='ver' || mode==='editar') && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16,  }} contentContainerStyle={{ flexDirection: 'row', gap: 10, height: 40 }}>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='professor-subject' && styles.tabActive]} onPress={()=>setViewRelationType('professor-subject')}><Text style={styles.tabText}>Profesor-Materia</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='grade-subject' && styles.tabActive]} onPress={()=>setViewRelationType('grade-subject')}><Text style={styles.tabText}>Grado-Materia</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='tutor-student' && styles.tabActive]} onPress={()=>setViewRelationType('tutor-student')}><Text style={styles.tabText}>Tutor-Alumno</Text></TouchableOpacity>
+        </ScrollView>
+      )}
+
+      
+
       {/* Ver/Editar relaciones */}
       {(mode==='ver' || mode==='editar') && (
-        <View style={{ marginVertical: 20, flex: 1 }}>
+        <View style={{ marginVertical: 5, flex: 16 }}>
           {loadingRelations ? (
             <Text style={{ textAlign: 'center', color: '#888' }}>Cargando relaciones...</Text>
           ) : (
