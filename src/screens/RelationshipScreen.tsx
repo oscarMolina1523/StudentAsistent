@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Button, Alert, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import {
   createTutorStudentRelation,
@@ -11,6 +11,14 @@ import { getAllStudents } from "../services/studentService";
 import { fetchSubjects, getSubjectsByGrade } from "../services/subjectServices";
 import { getUsersByRole } from "../services/userService";
 import axios from "axios";
+import { ProfessorSubjectRelationsList } from '../shared/ProfessorSubjectRelationsList';
+import { GradeSubjectRelationsList } from '../shared/GradeSubjectRelationsList';
+import { TutorStudentRelationsList } from '../shared/TutorStudentRelationsList';
+import { getAllProfessorSubjects } from '../services/professorSubjectService';
+import { getAllGradeSubjectRelations, getTutorStudentRelations } from '../services/relationshipService';
+import { Subject, ProfessorSubject, Grade, TutorStudentRelation } from '../models/Models';
+
+const PAGE_SIZE = 10;
 
 const RelationshipScreen = () => {
   const [relationType, setRelationType] = useState("");
@@ -24,11 +32,25 @@ const RelationshipScreen = () => {
   const [gradoId, setGradoId] = useState("");
   const [semestre, setSemestre] = useState(1);
 
-  const [tutores, setTutores] = useState([]);
-  const [alumnos, setAlumnos] = useState([]);
-  const [profesores, setProfesores] = useState([]);
-  const [materias, setMaterias] = useState([]);
-  const [grados, setGrados] = useState([]);
+  const [mode, setMode] = useState<'crear' | 'ver' | 'editar'>('crear');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+
+  // Paginación para cada lista
+  const [profPage, setProfPage] = useState<number>(1);
+  const [gradePage, setGradePage] = useState<number>(1);
+  const [tutorPage, setTutorPage] = useState<number>(1);
+
+  // Estados tipados
+  const [tutores, setTutores] = useState<any[]>([]);
+  const [alumnos, setAlumnos] = useState<any[]>([]);
+  const [profesores, setProfesores] = useState<any[]>([]);
+  const [materias, setMaterias] = useState<any[]>([]);
+  const [grados, setGrados] = useState<Grade[]>([]);
+  const [professorSubjectRelations, setProfessorSubjectRelations] = useState<ProfessorSubject[]>([]);
+  const [gradeSubjectRelations, setGradeSubjectRelations] = useState<any[]>([]);
+  const [tutorStudentRelations, setTutorStudentRelations] = useState<TutorStudentRelation[]>([]);
+  const [loadingRelations, setLoadingRelations] = useState(false);
 
   const parseMessage = (message: any) => {
     return Array.isArray(message) ? message.join("\n") : String(message);
@@ -122,6 +144,64 @@ const RelationshipScreen = () => {
     }
   };
 
+  const fetchAllRelations = async () => {
+    setLoadingRelations(true);
+    try {
+      // Profesor-Materia
+      const profRes = await getAllProfessorSubjects();
+      // Grado-Materia
+      const gradeRes = await getAllGradeSubjectRelations();
+      // Tutor-Alumno
+      const tutorRes = await getTutorStudentRelations();
+      setProfessorSubjectRelations(
+        profRes.map((r) => ({
+          ...r,
+          profesorNombre: r.profesorNombre || r.profesorId || '',
+          materiaNombre: r.materiaNombre || r.materiaId || '',
+        }))
+      );
+      setGradeSubjectRelations(
+        gradeRes.success ? gradeRes.data.map((r) => ({
+          ...r,
+          gradoNombre: r.gradoNombre || r.gradoId || '',
+          materiaNombre: r.materiaNombre || r.materiaId || '',
+        })) : []
+      );
+      setTutorStudentRelations(
+        tutorRes.map((r) => ({
+          ...r,
+          tutorNombre: r.tutorNombre || r.tutorId || '',
+          alumnoNombre: r.alumnoNombre || r.alumnoId || '',
+        }))
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingRelations(false);
+    }
+  };
+
+  // Solo cargar relaciones si modo es 'ver' o 'editar'
+  useEffect(() => {
+    if (mode === 'ver' || mode === 'editar') {
+      fetchAllRelations();
+    }
+  }, [mode]);
+
+  // Paginación helpers
+  function getPaginated<T>(arr: T[], page: number): T[] {
+    return arr.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  }
+  const profTotalPages = Math.ceil(professorSubjectRelations.length / PAGE_SIZE) || 1;
+  const gradeTotalPages = Math.ceil(gradeSubjectRelations.length / PAGE_SIZE) || 1;
+  const tutorTotalPages = Math.ceil(tutorStudentRelations.length / PAGE_SIZE) || 1;
+
+  // Modal de edición simulado
+  function handleFakeEdit(item: any) {
+    setEditItem(item);
+    setShowEditModal(true);
+  }
+
   const handleSubmit = async () => {
     if (relationType === "tutor-student" && tutorId && alumnoId) {
       const result = await createTutorStudentRelation(tutorId, alumnoId);
@@ -171,134 +251,210 @@ const RelationshipScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear Relaciones</Text>
+      <Text style={styles.title}>Gestión de Relaciones</Text>
+      {/* Tabs/Modo */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity style={[styles.tab, mode==='crear' && styles.tabActive]} onPress={()=>setMode('crear')}><Text style={styles.tabText}>Crear</Text></TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, mode==='ver' && styles.tabActive]} onPress={()=>setMode('ver')}><Text style={styles.tabText}>Ver</Text></TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, mode==='editar' && styles.tabActive]} onPress={()=>setMode('editar')}><Text style={styles.tabText}>Editar</Text></TouchableOpacity>
+      </View>
 
-      <Text>Tipo de Relación:</Text>
-      <Picker selectedValue={relationType} onValueChange={setRelationType}>
-        <Picker.Item label="Seleccione..." value="" />
-        <Picker.Item label="Tutor-Alumno" value="tutor-student" />
-        <Picker.Item label="Profesor-Materia" value="professor-subject" />
-        <Picker.Item label="Grado-Materia" value="grade-subject" />
-      </Picker>
-
-      {relationType === "tutor-student" && (
+      {/* Crear relaciones */}
+      {mode==='crear' && (
         <>
-          <Text>Tutor:</Text>
-          <Picker selectedValue={tutorId} onValueChange={setTutorId}>
-            {tutores.map((tutor) => (
-              <Picker.Item
-                key={tutor.id}
-                label={tutor.nombre}
-                value={tutor.id}
-              />
-            ))}
+          <Text>Tipo de Relación:</Text>
+          <Picker selectedValue={relationType} onValueChange={setRelationType}>
+            <Picker.Item label="Seleccione..." value="" />
+            <Picker.Item label="Tutor-Alumno" value="tutor-student" />
+            <Picker.Item label="Profesor-Materia" value="professor-subject" />
+            <Picker.Item label="Grado-Materia" value="grade-subject" />
           </Picker>
 
-          <Text>Alumno:</Text>
-          <Picker selectedValue={alumnoId} onValueChange={setAlumnoId}>
-            {alumnos.map((alumno) => (
-              <Picker.Item
-                key={alumno.id}
-                label={`${alumno.nombre} ${alumno.apellido}`}
-                value={alumno.id}
-              />
-            ))}
-          </Picker>
+          {relationType === "tutor-student" && (
+            <>
+              <Text>Tutor:</Text>
+              <Picker selectedValue={tutorId} onValueChange={setTutorId}>
+                {tutores.map((tutor) => (
+                  <Picker.Item
+                    key={tutor.id}
+                    label={tutor.nombre}
+                    value={tutor.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Alumno:</Text>
+              <Picker selectedValue={alumnoId} onValueChange={setAlumnoId}>
+                {alumnos.map((alumno) => (
+                  <Picker.Item
+                    key={alumno.id}
+                    label={`${alumno.nombre} ${alumno.apellido}`}
+                    value={alumno.id}
+                  />
+                ))}
+              </Picker>
+            </>
+          )}
+
+          {relationType === "professor-subject" && (
+            <>
+              <Text>Grado:</Text>
+              <Picker selectedValue={gradoId} onValueChange={setGradoId}>
+                {grados.map((grado) => (
+                  <Picker.Item
+                    key={grado.id}
+                    label={`${grado.nombre} (${grado.turno})`}
+                    value={grado.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Profesor:</Text>
+              <Picker selectedValue={profesorId} onValueChange={setProfesorId}>
+                {profesores.map((profesor) => (
+                  <Picker.Item
+                    key={profesor.id}
+                    label={profesor.nombre}
+                    value={profesor.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Materia:</Text>
+              <Picker
+                selectedValue={materiaGradoId}
+                onValueChange={setMateriaGradoId}
+              >
+                {materias.map((materia) => (
+                  <Picker.Item
+                    key={materia.id}
+                    label={materia.nombre}
+                    value={materia.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Turno:</Text>
+              <Picker selectedValue={turno} onValueChange={setTurno}>
+                <Picker.Item label="Mañana" value="mañana" />
+                <Picker.Item label="Tarde" value="tarde" />
+              </Picker>
+
+              <Text>Año Escolar:</Text>
+              <Picker selectedValue={anioEscolar} onValueChange={setAnioEscolar}>
+                <Picker.Item label="2025" value={2025} />
+                <Picker.Item label="2026" value={2026} />
+              </Picker>
+            </>
+          )}
+
+          {relationType === "grade-subject" && (
+            <>
+              <Text>Grado:</Text>
+              <Picker selectedValue={gradoId} onValueChange={setGradoId}>
+                {grados.map((grado) => (
+                  <Picker.Item
+                    key={grado.id}
+                    label={`${grado.nombre} (${grado.turno})`}
+                    // label={grado.nombre}
+                    value={grado.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Materia:</Text>
+              <Picker selectedValue={materiaId} onValueChange={setMateriaId}>
+                {materias.map((materia) => (
+                  <Picker.Item
+                    key={materia.id}
+                    label={materia.nombre}
+                    value={materia.id}
+                  />
+                ))}
+              </Picker>
+
+              <Text>Semestre:</Text>
+              <Picker selectedValue={semestre} onValueChange={setSemestre}>
+                <Picker.Item label="1" value={1} />
+                <Picker.Item label="2" value={2} />
+              </Picker>
+            </>
+          )}
+
+          {/* <Button title="Crear Relación" onPress={handleSubmit} /> */}
+          <TouchableOpacity style={styles.button}  onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Crear Relación</Text>
+          </TouchableOpacity>
         </>
       )}
 
-      {relationType === "professor-subject" && (
-        <>
-          <Text>Grado:</Text>
-          <Picker selectedValue={gradoId} onValueChange={setGradoId}>
-            {grados.map((grado) => (
-              <Picker.Item
-                key={grado.id}
-                label={`${grado.nombre} (${grado.turno})`}
-                value={grado.id}
+      {/* Ver/Editar relaciones */}
+      {(mode==='ver' || mode==='editar') && (
+        <View style={{ marginVertical: 20, flex: 1 }}>
+          {loadingRelations ? (
+            <Text style={{ textAlign: 'center', color: '#888' }}>Cargando relaciones...</Text>
+          ) : (
+            <>
+              {/* Profesor-Materia */}
+              <ProfessorSubjectRelationsList 
+                relations={getPaginated(professorSubjectRelations, profPage)} 
+                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
               />
-            ))}
-          </Picker>
-
-          <Text>Profesor:</Text>
-          <Picker selectedValue={profesorId} onValueChange={setProfesorId}>
-            {profesores.map((profesor) => (
-              <Picker.Item
-                key={profesor.id}
-                label={profesor.nombre}
-                value={profesor.id}
+              {professorSubjectRelations.length > PAGE_SIZE && (
+                <Pagination page={profPage} setPage={setProfPage} totalPages={profTotalPages} />
+              )}
+              {/* Grado-Materia */}
+              <GradeSubjectRelationsList 
+                relations={getPaginated(gradeSubjectRelations, gradePage)} 
+                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
               />
-            ))}
-          </Picker>
-
-          <Text>Materia:</Text>
-          <Picker
-            selectedValue={materiaGradoId}
-            onValueChange={setMateriaGradoId}
-          >
-            {materias.map((materia) => (
-              <Picker.Item
-                key={materia.id}
-                label={materia.nombre}
-                value={materia.id}
+              {gradeSubjectRelations.length > PAGE_SIZE && (
+                <Pagination page={gradePage} setPage={setGradePage} totalPages={gradeTotalPages} />
+              )}
+              {/* Tutor-Alumno */}
+              <TutorStudentRelationsList 
+                relations={getPaginated(tutorStudentRelations, tutorPage)} 
+                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
               />
-            ))}
-          </Picker>
-
-          <Text>Turno:</Text>
-          <Picker selectedValue={turno} onValueChange={setTurno}>
-            <Picker.Item label="Mañana" value="mañana" />
-            <Picker.Item label="Tarde" value="tarde" />
-          </Picker>
-
-          <Text>Año Escolar:</Text>
-          <Picker selectedValue={anioEscolar} onValueChange={setAnioEscolar}>
-            <Picker.Item label="2025" value={2025} />
-            <Picker.Item label="2026" value={2026} />
-          </Picker>
-        </>
+              {tutorStudentRelations.length > PAGE_SIZE && (
+                <Pagination page={tutorPage} setPage={setTutorPage} totalPages={tutorTotalPages} />
+              )}
+            </>
+          )}
+        </View>
       )}
 
-      {relationType === "grade-subject" && (
-        <>
-          <Text>Grado:</Text>
-          <Picker selectedValue={gradoId} onValueChange={setGradoId}>
-            {grados.map((grado) => (
-              <Picker.Item
-                key={grado.id}
-                label={`${grado.nombre} (${grado.turno})`}
-                // label={grado.nombre}
-                value={grado.id}
-              />
-            ))}
-          </Picker>
-
-          <Text>Materia:</Text>
-          <Picker selectedValue={materiaId} onValueChange={setMateriaId}>
-            {materias.map((materia) => (
-              <Picker.Item
-                key={materia.id}
-                label={materia.nombre}
-                value={materia.id}
-              />
-            ))}
-          </Picker>
-
-          <Text>Semestre:</Text>
-          <Picker selectedValue={semestre} onValueChange={setSemestre}>
-            <Picker.Item label="1" value={1} />
-            <Picker.Item label="2" value={2} />
-          </Picker>
-        </>
-      )}
-
-      {/* <Button title="Crear Relación" onPress={handleSubmit} /> */}
-      <TouchableOpacity style={styles.button}  onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Crear Relación</Text>
-      </TouchableOpacity>
+      {/* Modal de edición simulado */}
+      <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={()=>setShowEditModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Edición de Relación (Simulado)</Text>
+            <Text style={{marginBottom:10}}>{editItem ? JSON.stringify(editItem, null, 2) : ''}</Text>
+            <TouchableOpacity style={styles.button} onPress={()=>setShowEditModal(false)}>
+              <Text style={styles.buttonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+// Componente de paginación reutilizable
+interface PaginationProps {
+  page: number;
+  setPage: (page: number) => void;
+  totalPages: number;
+}
+const Pagination = ({ page, setPage, totalPages }: PaginationProps) => (
+  <View style={styles.paginationContainer}>
+    <Text style={styles.paginationText}>Página {page} de {totalPages}</Text>
+    <View style={styles.paginationButtons}>
+      <Text style={[styles.paginationButton, page===1 && styles.paginationButtonDisabled]} onPress={()=>page>1 && setPage(page-1)}>Anterior</Text>
+      <Text style={[styles.paginationButton, page===totalPages && styles.paginationButtonDisabled]} onPress={()=>page<totalPages && setPage(page+1)}>Siguiente</Text>
+    </View>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -325,6 +481,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  tabContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20, gap: 10 },
+  tab: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, backgroundColor: '#e0e0e0' },
+  tabActive: { backgroundColor: '#339999' },
+  tabText: { color: '#222', fontWeight: 'bold', fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: 'white', borderRadius: 12, padding: 24, width: 320, alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  paginationContainer: { alignItems: 'center', marginVertical: 10 },
+  paginationText: { fontSize: 14, marginBottom: 4 },
+  paginationButtons: { flexDirection: 'row', gap: 20 },
+  paginationButton: { color: '#007bff', fontWeight: 'bold', fontSize: 16, paddingHorizontal: 16, paddingVertical: 6 },
+  paginationButtonDisabled: { color: '#ccc' },
 });
 
 export default RelationshipScreen;
