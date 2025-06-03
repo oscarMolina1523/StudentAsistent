@@ -11,3 +11,11 @@ export interface ProfessorSubject {
   profesorId: string;
   turno: string;
 }
+
+export interface Grade {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  turno: string;
+  imagenUrl: string;
+}
