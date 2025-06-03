@@ -17,7 +17,7 @@ const RelationshipScreen = () => {
   const [tutorId, setTutorId] = useState("");
   const [alumnoId, setAlumnoId] = useState("");
   const [profesorId, setProfesorId] = useState("");
-  const [materiaGradoId, setMateriaGradoId] = useState(""); // Este es el ID de la relación entre materia y grado
+  const [materiaGradoId, setMateriaGradoId] = useState(""); 
   const [materiaId, setMateriaId] = useState("");
   const [turno, setTurno] = useState("mañana");
   const [anioEscolar, setAnioEscolar] = useState(2025);
@@ -30,7 +30,7 @@ const RelationshipScreen = () => {
   const [materias, setMaterias] = useState([]);
   const [grados, setGrados] = useState([]);
 
-  const parseMessage = (message) => {
+  const parseMessage = (message: any) => {
     return Array.isArray(message) ? message.join("\n") : String(message);
   };
 
