@@ -42,3 +42,9 @@ export type AttendanceSummary = {
   fecha: string;
   justificacion: string;
 };
+
+export interface TutorStudentRelation {
+  id: string;
+  alumnoId: string;
+  tutorId: string;
+}

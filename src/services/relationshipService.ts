@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../utils/constants';
+import { TutorStudentRelation } from '../models/Models';
 
 // Helper para obtener el token almacenado
 const getAuthHeaders = async () => {
@@ -94,3 +95,7 @@ export const getAllGradeSubjectRelations = async () => {
   }
 };
 
+export const getTutorStudentRelations = async (): Promise<TutorStudentRelation[]> => {
+  const response = await axios.get<TutorStudentRelation[]>(`${API_BASE_URL}/tutor-student`);
+  return response.data;
+};
