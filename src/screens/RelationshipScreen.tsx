@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, Alert, StyleSheet, TouchableOpacity, Modal } from "react-native";
+import { View, Text, Button, Alert, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import {
   createTutorStudentRelation,
@@ -51,6 +51,9 @@ const RelationshipScreen = () => {
   const [gradeSubjectRelations, setGradeSubjectRelations] = useState<any[]>([]);
   const [tutorStudentRelations, setTutorStudentRelations] = useState<TutorStudentRelation[]>([]);
   const [loadingRelations, setLoadingRelations] = useState(false);
+
+  // Nuevo: tipo de relación a ver/editar
+  const [viewRelationType, setViewRelationType] = useState<string>("professor-subject");
 
   const parseMessage = (message: any) => {
     return Array.isArray(message) ? message.join("\n") : String(message);
@@ -188,6 +191,29 @@ const RelationshipScreen = () => {
     }
   }, [mode]);
 
+  // Helpers para obtener data y paginación según tipo
+  const getCurrentRelations = () => {
+    if (viewRelationType === "professor-subject") return professorSubjectRelations;
+    if (viewRelationType === "grade-subject") return gradeSubjectRelations;
+    if (viewRelationType === "tutor-student") return tutorStudentRelations;
+    return [];
+  };
+  const getCurrentPage = () => {
+    if (viewRelationType === "professor-subject") return profPage;
+    if (viewRelationType === "grade-subject") return gradePage;
+    if (viewRelationType === "tutor-student") return tutorPage;
+    return 1;
+  };
+  const setCurrentPage = (page: number) => {
+    if (viewRelationType === "professor-subject") setProfPage(page);
+    if (viewRelationType === "grade-subject") setGradePage(page);
+    if (viewRelationType === "tutor-student") setTutorPage(page);
+  };
+  const getTotalPages = () => {
+    const data = getCurrentRelations();
+    return Math.ceil(data.length / PAGE_SIZE) || 1;
+  };
+
   // Paginación helpers
   function getPaginated<T>(arr: T[], page: number): T[] {
     return arr.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
@@ -258,6 +284,15 @@ const RelationshipScreen = () => {
         <TouchableOpacity style={[styles.tab, mode==='ver' && styles.tabActive]} onPress={()=>setMode('ver')}><Text style={styles.tabText}>Ver</Text></TouchableOpacity>
         <TouchableOpacity style={[styles.tab, mode==='editar' && styles.tabActive]} onPress={()=>setMode('editar')}><Text style={styles.tabText}>Editar</Text></TouchableOpacity>
       </View>
+
+      {/* Selector de tipo de relación para ver/editar con scroll horizontal */}
+      {(mode==='ver' || mode==='editar') && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16,  }} contentContainerStyle={{ flexDirection: 'row', gap: 10, height: 40 }}>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='professor-subject' && styles.tabActive]} onPress={()=>setViewRelationType('professor-subject')}><Text style={styles.tabText}>Profesor-Materia</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='grade-subject' && styles.tabActive]} onPress={()=>setViewRelationType('grade-subject')}><Text style={styles.tabText}>Grado-Materia</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, viewRelationType==='tutor-student' && styles.tabActive]} onPress={()=>setViewRelationType('tutor-student')}><Text style={styles.tabText}>Tutor-Alumno</Text></TouchableOpacity>
+        </ScrollView>
+      )}
 
       {/* Crear relaciones */}
       {mode==='crear' && (
@@ -395,44 +430,91 @@ const RelationshipScreen = () => {
             <Text style={{ textAlign: 'center', color: '#888' }}>Cargando relaciones...</Text>
           ) : (
             <>
-              {/* Profesor-Materia */}
-              <ProfessorSubjectRelationsList 
-                relations={getPaginated(professorSubjectRelations, profPage)} 
-                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
-              />
-              {professorSubjectRelations.length > PAGE_SIZE && (
-                <Pagination page={profPage} setPage={setProfPage} totalPages={profTotalPages} />
+              {viewRelationType === 'professor-subject' && (
+                <>
+                  <ProfessorSubjectRelationsList 
+                    relations={getPaginated(professorSubjectRelations, profPage)} 
+                    onEdit={mode==='editar' ? handleFakeEdit : undefined} 
+                  />
+                  {professorSubjectRelations.length > PAGE_SIZE && (
+                    <Pagination page={profPage} setPage={setProfPage} totalPages={profTotalPages} />
+                  )}
+                </>
               )}
-              {/* Grado-Materia */}
-              <GradeSubjectRelationsList 
-                relations={getPaginated(gradeSubjectRelations, gradePage)} 
-                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
-              />
-              {gradeSubjectRelations.length > PAGE_SIZE && (
-                <Pagination page={gradePage} setPage={setGradePage} totalPages={gradeTotalPages} />
+              {viewRelationType === 'grade-subject' && (
+                <>
+                  <GradeSubjectRelationsList 
+                    relations={getPaginated(gradeSubjectRelations, gradePage)} 
+                    onEdit={mode==='editar' ? handleFakeEdit : undefined} 
+                  />
+                  {gradeSubjectRelations.length > PAGE_SIZE && (
+                    <Pagination page={gradePage} setPage={setGradePage} totalPages={gradeTotalPages} />
+                  )}
+                </>
               )}
-              {/* Tutor-Alumno */}
-              <TutorStudentRelationsList 
-                relations={getPaginated(tutorStudentRelations, tutorPage)} 
-                onEdit={mode==='editar' ? handleFakeEdit : undefined} 
-              />
-              {tutorStudentRelations.length > PAGE_SIZE && (
-                <Pagination page={tutorPage} setPage={setTutorPage} totalPages={tutorTotalPages} />
+              {viewRelationType === 'tutor-student' && (
+                <>
+                  <TutorStudentRelationsList 
+                    relations={getPaginated(tutorStudentRelations, tutorPage)} 
+                    onEdit={mode==='editar' ? handleFakeEdit : undefined} 
+                  />
+                  {tutorStudentRelations.length > PAGE_SIZE && (
+                    <Pagination page={tutorPage} setPage={setTutorPage} totalPages={tutorTotalPages} />
+                  )}
+                </>
               )}
             </>
           )}
         </View>
       )}
 
-      {/* Modal de edición simulado */}
+      {/* Modal de edición simulado con inputs */}
       <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={()=>setShowEditModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Edición de Relación (Simulado)</Text>
-            <Text style={{marginBottom:10}}>{editItem ? JSON.stringify(editItem, null, 2) : ''}</Text>
-            <TouchableOpacity style={styles.button} onPress={()=>setShowEditModal(false)}>
-              <Text style={styles.buttonText}>Cerrar</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Editar Relación</Text>
+            {editItem && (
+              <>
+                {viewRelationType === 'professor-subject' && (
+                  <>
+                    <Text style={{fontWeight:'bold'}}>Profesor</Text>
+                    <TextInput style={styles.input} value={editItem.profesorNombre} editable={false} />
+                    <Text style={{fontWeight:'bold'}}>Materia</Text>
+                    <TextInput style={styles.input} value={editItem.materiaNombre} editable={false} />
+                    <Text style={{fontWeight:'bold'}}>Turno</Text>
+                    <TextInput style={styles.input} value={editItem.turno} />
+                    <Text style={{fontWeight:'bold'}}>Año Escolar</Text>
+                    <TextInput style={styles.input} value={String(editItem.anioEscolar)} keyboardType="numeric" />
+                  </>
+                )}
+                {viewRelationType === 'grade-subject' && (
+                  <>
+                    <Text style={{fontWeight:'bold'}}>Grado</Text>
+                    <TextInput style={styles.input} value={editItem.gradoNombre} editable={false} />
+                    <Text style={{fontWeight:'bold'}}>Materia</Text>
+                    <TextInput style={styles.input} value={editItem.materiaNombre} editable={false} />
+                    <Text style={{fontWeight:'bold'}}>Semestre</Text>
+                    <TextInput style={styles.input} value={String(editItem.semestre)} keyboardType="numeric" />
+                  </>
+                )}
+                {viewRelationType === 'tutor-student' && (
+                  <>
+                    <Text style={{fontWeight:'bold'}}>Tutor</Text>
+                    <TextInput style={styles.input} value={editItem.tutorNombre} editable={false} />
+                    <Text style={{fontWeight:'bold'}}>Alumno</Text>
+                    <TextInput style={styles.input} value={editItem.alumnoNombre} editable={false} />
+                  </>
+                )}
+              </>
+            )}
+            <View style={{flexDirection:'row', gap:16, marginTop:16}}>
+              <TouchableOpacity style={[styles.button, {flex:1, backgroundColor:'#339999'}]} onPress={()=>{/* conectar a backend aquí */}}>
+                <Text style={styles.buttonText}>Guardar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, {flex:1, backgroundColor:'#888'}]} onPress={()=>setShowEditModal(false)}>
+                <Text style={styles.buttonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -482,9 +564,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   tabContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20, gap: 10 },
-  tab: { paddingVertical: 8, paddingHorizontal: 18, borderRadius: 20, backgroundColor: '#e0e0e0' },
+  tab: { paddingVertical: 4, paddingHorizontal: 14, borderRadius: 20, backgroundColor: '#e0e0e0' },
   tabActive: { backgroundColor: '#339999' },
-  tabText: { color: '#222', fontWeight: 'bold', fontSize: 16 },
+  tabText: { color: '#222', fontWeight: 'bold', fontSize: 16, paddingVertical: 0, paddingHorizontal: 0 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalContainer: { backgroundColor: 'white', borderRadius: 12, padding: 24, width: 320, alignItems: 'center' },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
@@ -493,6 +575,15 @@ const styles = StyleSheet.create({
   paginationButtons: { flexDirection: 'row', gap: 20 },
   paginationButton: { color: '#007bff', fontWeight: 'bold', fontSize: 16, paddingHorizontal: 16, paddingVertical: 6 },
   paginationButtonDisabled: { color: '#ccc' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    width: '100%',
+    marginBottom: 12,
+    fontSize: 16,
+  },
 });
 
 export default RelationshipScreen;
