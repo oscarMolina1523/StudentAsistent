@@ -7,14 +7,15 @@ const ProfileScreen = ({ navigation }: any) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [image, setImage] = useState('');
   const [userId, setUserId] = useState('');
   const [userData, setUserData] = useState<any>(null);
-  const [role, setRole] = useState(''); // ✅ nuevo estado para el rol
+  const [role, setRole] = useState(''); 
 
   useEffect(() => {
     const loadUserData = async () => {
       const id = await AsyncStorage.getItem('userId');
-      const storedRole = await AsyncStorage.getItem('userRole'); // ✅ obtener el rol
+      const storedRole = await AsyncStorage.getItem('userRole'); // obtener el rol
       if (storedRole) setRole(storedRole);
 
       if (id) {
@@ -25,6 +26,7 @@ const ProfileScreen = ({ navigation }: any) => {
           setUserData(user);
           setName(user.nombre);
           setEmail(user.email);
+          setImage(user.fotoPerfilUrl);
         }
       }
     };
@@ -38,6 +40,7 @@ const ProfileScreen = ({ navigation }: any) => {
       ...userData,
       nombre: name,
       email: email,
+      fotoPerfilUrl: image || userData.fotoPerfilUrl,
     };
 
     const result = await updateUser(userId, updatedUser);
@@ -93,6 +96,12 @@ const ProfileScreen = ({ navigation }: any) => {
               placeholder="Correo"
               value={email}
               onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Imagen"
+              value={image}
+              onChangeText={setImage}
             />
             <TouchableOpacity style={[styles.button, { width: '100%' }]} onPress={handleEditProfile}>
               <Text style={styles.buttonText}>Guardar</Text>
