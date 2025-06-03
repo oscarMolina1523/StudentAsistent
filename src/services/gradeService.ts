@@ -1,15 +1,7 @@
 import axios from 'axios';
+import { Grade } from '../models/Models';
+import { API_BASE_URL } from '../utils/constants';
 
-const API_BASE_URL = 'https://backend-fastapi-ten.vercel.app'; // URL de tu API
-
-// Definir la interfaz para el grado
-export interface Grade {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  turno: string;
-  imagenUrl: string;
-}
 
 // Obtener todos los grados
 export const fetchGrades = async (): Promise<Grade[]> => {
