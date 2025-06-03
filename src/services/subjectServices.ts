@@ -1,20 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-
-// Interfaces
-export interface Subject {
-  id: string;
-  nombre: string;
-  imagenUrl: string;
-}
-
-export interface ProfessorSubject {
-  id: string;
-  materiaGradoId: string;
-  anioEscolar: number;
-  profesorId: string;
-  turno: string;
-}
+import { ProfessorSubject, Subject } from '../models/Models';
 
 export const getSubjectsByProfessorId = async (
   profesorId: string
