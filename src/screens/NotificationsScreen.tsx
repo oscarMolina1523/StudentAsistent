@@ -1,105 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Modal, TouchableOpacity } from 'react-native';
-import { getNotifications } from '../services/notificationService';
+import { getPaginatedNotifications } from '../services/notificationService';
 import { getStudentById } from '../services/studentService';
 
 const NotificationsScreen = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const data = await getNotifications();
+    fetchPaginatedNotifications(1, true);
+  }, []);
 
+  const fetchPaginatedNotifications = async (pageToLoad: number, reset: boolean = false) => {
+    setLoading(true);
+    const response = await getPaginatedNotifications(pageToLoad, PAGE_SIZE);
+    if (response.success) {
+      const dataArr = response.data.results || response.data.notifications || response.data || [];
       // Obtener nombres de los estudiantes para cada notificación
       const enhancedNotifications = await Promise.all(
-        data.map(async (notification: any) => {
+        dataArr.map(async (notification: any) => {
           let mensajeFinal = '';
           try {
-            // Obtener el nombre del estudiante
             const studentResult = await getStudentById(notification.alumnoId);
-
-            // Si obtenemos los datos correctamente, usamos el nombre y apellido del estudiante
             const nombreCompleto = studentResult.success
               ? `${studentResult.data.nombre} ${studentResult.data.apellido}`
-              : 'Tu hijo/a';  // Si no se puede obtener el nombre, usamos 'Tu hijo/a'
-
-            // Reemplazamos "Tu hijo/a" con el nombre completo en el mensaje
+              : 'Tu hijo/a';
             mensajeFinal = notification.mensaje.replace('Tu hijo/a', nombreCompleto);
           } catch (error) {
-            // Si hay un error, usamos el mensaje original
             mensajeFinal = notification.mensaje;
           }
-
-          return {
-            ...notification,
-            mensaje: mensajeFinal,
-          };
+          return { ...notification, mensaje: mensajeFinal };
         })
       );
-
-      // Ordenar de más reciente a más antigua
-      const sorted = enhancedNotifications.sort(
-        (a: any, b: any) =>
-          new Date(b.fechaEnvio).getTime() - new Date(a.fechaEnvio).getTime()
-      );
-
-      setNotifications(sorted);
-
-      // --- Validación de ausencias en la semana ---
-      // Agrupar ausencias por alumno
-      const ausenciasPorAlumno: { [alumnoId: string]: Date[] } = {};
-      for (const n of sorted) {
-        if (n.tipo === 'ausente' && n.alumnoId && n.fechaEnvio) {
-          if (!ausenciasPorAlumno[n.alumnoId]) ausenciasPorAlumno[n.alumnoId] = [];
-          ausenciasPorAlumno[n.alumnoId].push(new Date(n.fechaEnvio));
-        }
-      }
-
-      // Calcular semana actual (lunes a domingo)
-      const now = new Date();
-      const dayOfWeek = now.getDay(); // 0=domingo, 1=lunes, ..., 6=sábado
-      const diffToMonday = (dayOfWeek + 6) % 7; // días desde lunes
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - diffToMonday);
-      monday.setHours(0, 0, 0, 0);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
-
-      // Buscar alumnos con 3 o más ausencias en la semana
-      let alertados: string[] = [];
-      let nombres: string[] = [];
-      for (const alumnoId in ausenciasPorAlumno) {
-        const fechas = ausenciasPorAlumno[alumnoId].filter(
-          (fecha) => fecha >= monday && fecha <= sunday
-        );
-        if (fechas.length >= 3) {
-          alertados.push(alumnoId);
-        }
-      }
-
-      // Obtener nombres de los alumnos alertados
-      for (const alumnoId of alertados) {
-        const noti = sorted.find(n => n.alumnoId === alumnoId);
-        if (noti) {
-          // El mensaje ya tiene el nombre completo
-          const nombre = noti.mensaje.split(' ')[0] + ' ' + noti.mensaje.split(' ')[1];
-          if (!nombres.includes(nombre)) nombres.push(nombre);
-        }
-      }
-
-      if (nombres.length > 0) {
-        setAlertMessage(
-          `⚠️ Atención: ${nombres.join(', ')} ha estado ausente 3 veces o más esta semana. Por favor, tome las medidas necesarias.`
-        );
-        setShowAlert(true);
-      }
-    };
-
-    fetchNotifications();
-  }, []);
+      setNotifications(prev => reset ? enhancedNotifications : [...prev, ...enhancedNotifications]);
+      setPage(pageToLoad);
+      setHasMore(dataArr.length === PAGE_SIZE); // Si recibo menos que PAGE_SIZE, no hay más
+    }
+    setLoading(false);
+  };
 
   const getStyleByType = (tipo: string) => {
     switch (tipo) {
@@ -182,7 +125,31 @@ const NotificationsScreen = () => {
           );
         }}
         ListEmptyComponent={
-          <Text style={styles.noData}>No hay notificaciones.</Text>
+          <View>
+            <Text style={styles.noData}>No hay notificaciones.</Text>
+            {hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => fetchPaginatedNotifications(page + 1)}
+                disabled={loading}
+              >
+                <Text style={styles.loadMoreButtonText}>{loading ? 'Cargando...' : 'Cargar más'}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
+        ListFooterComponent={
+          notifications.length > 0 && hasMore ? (
+            <TouchableOpacity
+              style={styles.loadMoreButton}
+              onPress={() => fetchPaginatedNotifications(page + 1)}
+              disabled={loading}
+            >
+              <Text style={styles.loadMoreButtonText}>{loading ? 'Cargando...' : 'Cargar más'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ height: 20 }} />
+          )
         }
       />
     </View>
@@ -245,6 +212,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   alertButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loadMoreButton: {
+    backgroundColor: '#339999',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginVertical: 10,
+  },
+  loadMoreButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,

@@ -28,6 +28,24 @@ export const getNotifications = async () => {
   }
 };
 
+export const getPaginatedNotifications = async (page: number = 1, pageSize: number = 10) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/notifications/paginated`, {
+      params: {
+        page,
+        page_size: pageSize,
+      },
+    });
+
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error al obtener las notificaciones paginadas',
+    };
+  }
+};
+
 
 export const addNotification = (message: string) => {
   const newNotification = { id: notifications.length + 1, message };
