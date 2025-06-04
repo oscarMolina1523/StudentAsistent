@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Modal, TouchableOpacity, StyleSheet, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getAllUsers, createUser, updateUser, deleteUser } from '../services/userService'; // Aquí importamos las funciones del servicio
+import { getAllUsers, createUser, updateUser, deleteUser, getPaginatedUsers } from '../services/userService'; // Aquí importamos las funciones del servicio
 import { Picker } from '@react-native-picker/picker';
 
 export interface User {
@@ -14,7 +14,10 @@ export interface User {
 }
 
 const UserManagementScreen = () => {
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
   const [users, setUsers] = useState<User[]>([]);
+  const [hasMore, setHasMore] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<User>({
@@ -27,13 +30,16 @@ const UserManagementScreen = () => {
   });
 
   useEffect(() => {
-    fetchUsers();
+    fetchPaginatedUsers(1, true);
   }, []);
 
-  const fetchUsers = async () => {
-    const result = await getAllUsers();
+  const fetchPaginatedUsers = async (pageToLoad: number, reset: boolean = false) => {
+    const result = await getPaginatedUsers(pageToLoad, PAGE_SIZE);
     if (result.success) {
-      setUsers(result.data);
+      const dataArr = result.data.results || result.data.users || result.data || [];
+      setUsers(prev => reset ? dataArr : [...prev, ...dataArr]);
+      setPage(pageToLoad);
+      setHasMore(dataArr.length === PAGE_SIZE);
     } else {
       console.error(result.message);
       alert(result.message);
@@ -51,7 +57,7 @@ const UserManagementScreen = () => {
   const createUserDetails = async () => {
     const result = await createUser(userData);
     if (result.success) {
-      fetchUsers();
+      fetchPaginatedUsers(1, true);
       setModalVisible(false);
     } else {
       console.error(result.message);
@@ -62,7 +68,7 @@ const UserManagementScreen = () => {
   const updateUserDetails = async (userId: string) => {
     const result = await updateUser(userId, userData);
     if (result.success) {
-      fetchUsers();
+      fetchPaginatedUsers(1, true);
       setModalVisible(false);
     } else {
       console.error(result.message);
@@ -73,7 +79,7 @@ const UserManagementScreen = () => {
   const handleDelete = async (userId: string) => {
     const result = await deleteUser(userId);
     if (result.success) {
-      fetchUsers();
+      fetchPaginatedUsers(1, true);
     } else {
       console.error(result.message);
       alert(result.message);
@@ -124,6 +130,16 @@ const UserManagementScreen = () => {
             </View>
           </View>
         )}
+        ListFooterComponent={
+          hasMore ? (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => fetchPaginatedUsers(page + 1)}
+            >
+              <Text style={styles.buttonText}>Cargar más</Text>
+            </TouchableOpacity>
+          ) : <View style={{ height: 20 }} />
+        }
       />
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalBackground}>
