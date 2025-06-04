@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  getAllStudents,
+  getPaginatedStudents,
   createStudent,
   updateStudent,
   deleteStudent,
@@ -28,6 +28,8 @@ interface Student {
   activo: boolean;
 }
 
+const PAGE_SIZE = 10;
+
 const StudentManagementScreen = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -42,16 +44,22 @@ const StudentManagementScreen = () => {
     fechaNacimiento: "",
     activo: true,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchStudents();
+    fetchPaginatedStudents(currentPage);
     fetchGradesList();
-  }, []);
+  }, [currentPage]);
 
-  const fetchStudents = async () => {
-    const response = await getAllStudents();
+  const fetchPaginatedStudents = async (page: number) => {
+    const response = await getPaginatedStudents(page, PAGE_SIZE);
     if (response.success) {
-      setStudents(response.data);
+      setStudents(response.data.results || response.data.students || []);
+      setTotalPages(
+        response.data.total_pages ||
+          Math.ceil((response.data.count || 1) / PAGE_SIZE)
+      );
     } else {
       alert(response.message);
     }
@@ -71,7 +79,7 @@ const StudentManagementScreen = () => {
   const handleCreate = async () => {
     const response = await createStudent(studentData);
     if (response.success) {
-      fetchStudents();
+      fetchPaginatedStudents(currentPage);
       setModalVisible(false);
     } else {
       alert(response.message);
@@ -82,7 +90,7 @@ const StudentManagementScreen = () => {
     if (selectedStudent && selectedStudent.id) {
       const response = await updateStudent(selectedStudent.id, studentData);
       if (response.success) {
-        fetchStudents();
+        fetchPaginatedStudents(currentPage);
         setModalVisible(false);
       } else {
         alert(response.message);
@@ -93,7 +101,7 @@ const StudentManagementScreen = () => {
   const handleDelete = async (id: string) => {
     const response = await deleteStudent(id);
     if (response.success) {
-      fetchStudents();
+      fetchPaginatedStudents(currentPage);
     } else {
       alert(response.message);
     }
@@ -140,6 +148,34 @@ const StudentManagementScreen = () => {
           </View>
         )}
       />
+      {/* Paginación */}
+      <View style={styles.paginationContainer}>
+        <Text style={styles.paginationText}>
+          Página {currentPage} de {totalPages}
+        </Text>
+        <View style={styles.paginationButtons}>
+          <Text
+            style={[
+              styles.paginationButton,
+              currentPage === 1 && styles.paginationButtonDisabled,
+            ]}
+            onPress={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+          >
+            Anterior
+          </Text>
+          <Text
+            style={[
+              styles.paginationButton,
+              currentPage === totalPages && styles.paginationButtonDisabled,
+            ]}
+            onPress={() =>
+              currentPage < totalPages && setCurrentPage(currentPage + 1)
+            }
+          >
+            Siguiente
+          </Text>
+        </View>
+      </View>
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
@@ -270,7 +306,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: "center",
   },
-  
+  paginationContainer: { alignItems: "center", marginVertical: 40 },
+  paginationText: { fontSize: 14, marginBottom: 4 },
+  paginationButtons: { flexDirection: "row", gap: 20 },
+  paginationButton: {
+    color: "#007bff",
+    fontWeight: "bold",
+    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  paginationButtonDisabled: { color: "#ccc" },
 });
 
 export default StudentManagementScreen;

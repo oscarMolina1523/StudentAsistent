@@ -22,6 +22,24 @@ export const getAllStudents = async () => {
   }
 };
 
+export const getPaginatedStudents = async (page: number = 1, pageSize: number = 10) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/students/paginated`, {
+      params: {
+        page,
+        page_size: pageSize,
+      },
+    });
+
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || 'Error al obtener los estudiantes paginados',
+    };
+  }
+};
+
 // Función para obtener un estudiante por ID
 export const getStudentById = async (studentId: string) => {
   try {
