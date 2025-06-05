@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { getAllReportsFromSession } from "./StudentDetailsScreen";
+import { getSubjectsByGrade, getGradeById } from "../services/subjectServices";
 
 interface ReportData {
   total: number;
@@ -15,6 +16,7 @@ const ReportScreen = () => {
   const [reports, setReports] = useState<any>({});
   const [selected, setSelected] = useState<{ materiaId: string; fecha: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [materiaNombres, setMateriaNombres] = useState<{ [materiaId: string]: string }>({});
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -25,6 +27,33 @@ const ReportScreen = () => {
     };
     fetchReports();
   }, []);
+
+  // Cargar nombres de materia para la lista
+  useEffect(() => {
+    const fetchNombres = async () => {
+      const nombres: { [materiaId: string]: string } = {};
+      for (const materiaId of Object.keys(reports)) {
+        const fechas = Object.keys(reports[materiaId]);
+        if (fechas.length > 0) {
+          const anyReport = reports[materiaId][fechas[0]];
+          const gradeId = anyReport.gradeId || anyReport.gradoId || anyReport.grade_id || anyReport.grado_id;
+          if (gradeId) {
+            try {
+              const subjects = await getSubjectsByGrade(gradeId);
+              const subject = subjects.find((s: any) => s.id === materiaId || s.materiaId === materiaId);
+              nombres[materiaId] = subject ? subject.nombre : materiaId;
+            } catch {
+              nombres[materiaId] = materiaId;
+            }
+          } else {
+            nombres[materiaId] = materiaId;
+          }
+        }
+      }
+      setMateriaNombres(nombres);
+    };
+    if (Object.keys(reports).length > 0) fetchNombres();
+  }, [reports]);
 
   // Si hay un reporte seleccionado, mostrarlo
   if (selected && reports[selected.materiaId] && reports[selected.materiaId][selected.fecha]) {
@@ -78,7 +107,9 @@ const ReportScreen = () => {
       <Text style={styles.title}>Reportes de Asistencia</Text>
       {materiaIds.map((materiaId) => (
         <View key={materiaId} style={{ width: '100%' }}>
-          <Text style={styles.sectionTitle}>Materia: {materiaId}</Text>
+          <Text style={styles.sectionTitle}>
+            Materia: {typeof materiaNombres[materiaId] === 'string' ? materiaNombres[materiaId] : materiaId}
+          </Text>
           {Object.keys(reports[materiaId]).map((fecha) => (
             <TouchableOpacity
               key={fecha}

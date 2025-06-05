@@ -263,7 +263,9 @@ const StudentDetailsScreen = ({ route }: any) => {
       setAttendanceTakenToday(true);
       // --- Guardar reporte en sesión (local) ---
       const report = generateAttendanceReport(students, attendanceDraft);
-      await saveReportToSession(materiaId, fecha, report);
+      // Guardar bajo reports[gradeId][materiaId][fecha]
+      const gradeId = route.params.gradeId || "sin-grado";
+      await saveReportToSession(gradeId, materiaId, fecha, report);
       Alert.alert("Éxito", "Asistencia tomada con éxito");
     } catch (error) {
       Alert.alert("Error", "Ocurrió un error al guardar la asistencia");
@@ -575,12 +577,13 @@ const styles = StyleSheet.create({
 
 const REPORTS_KEY = 'attendanceReports';
 
-const saveReportToSession = async (materiaId: string, fecha: string, report: any) => {
+const saveReportToSession = async (gradeId: string, materiaId: string, fecha: string, report: any) => {
   try {
     const stored = await AsyncStorage.getItem(REPORTS_KEY);
     let reports = stored ? JSON.parse(stored) : {};
-    if (!reports[materiaId]) reports[materiaId] = {};
-    reports[materiaId][fecha] = report;
+    if (!reports[gradeId]) reports[gradeId] = {};
+    if (!reports[gradeId][materiaId]) reports[gradeId][materiaId] = {};
+    reports[gradeId][materiaId][fecha] = report;
     await AsyncStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
   } catch (e) { console.error('Error saving report to session', e); }
 };
