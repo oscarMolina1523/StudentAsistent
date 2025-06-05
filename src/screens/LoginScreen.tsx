@@ -17,7 +17,11 @@ const LoginScreen = () => {
       const result = await login(email, password);
 
       if (result.success) {
-        // Navigate to the "Home" screen upon successful login
+        // Navegar a Home tras login exitoso
+        // Lanzar la precarga de asistencias en segundo plano
+        import('../services/attendanceCache').then(mod => {
+          mod.preloadAttendanceSummary();
+        });
         navigation.navigate("Home");
       } else {
         // Show an alert with the error message

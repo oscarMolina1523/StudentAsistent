@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Text, Dimensions, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { BarChart, PieChart } from "react-native-chart-kit";
-import { getAttendanceSummary} from "../services/attendanceService";
+import { getCachedAttendanceSummary, preloadAttendanceSummary } from "../services/attendanceCache";
 import { fetchGrades } from "../services/gradeService";
 import { getGradeSubjectRelations, getSubjectDetails } from "../services/subjectServices";
 import { getAllProfessorSubjects } from "../services/professorSubjectService";
@@ -85,6 +85,19 @@ const AttendanceChart = () => {
 
   // Cargar grados al inicio y setear el primero por defecto
   useEffect(() => {
+    // Intentar usar el caché primero
+    const cached = getCachedAttendanceSummary();
+    if (cached) {
+      setAttendance(cached);
+    } else {
+      // Si no hay caché, cargar normalmente y actualizar el caché
+      import('../services/attendanceService').then(mod => {
+        mod.getAttendanceSummary().then((data) => {
+          setAttendance(data);
+          preloadAttendanceSummary(); // Actualiza el caché para futuras vistas
+        });
+      });
+    }
     fetchGrades().then((grades) => {
       // Ordenar grados de menor a mayor por nombre 
       const order = [
@@ -101,7 +114,6 @@ const AttendanceChart = () => {
       setGrades(sortedGrades);
       if (sortedGrades.length > 0) setSelectedGrade(sortedGrades[0].id);
     });
-    getAttendanceSummary().then(setAttendance);
   }, []);
 
   // Cargar relaciones grado-materia al cambiar grado y setear la primera materia por defecto
