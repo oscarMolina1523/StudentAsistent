@@ -38,6 +38,7 @@ const StudentManagementScreen = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     fetchPaginatedStudents(currentPage);
@@ -47,11 +48,9 @@ const StudentManagementScreen = () => {
   const fetchPaginatedStudents = async (page: number) => {
     const response = await getPaginatedStudents(page, PAGE_SIZE);
     if (response.success) {
-      setStudents(response.data.results || response.data.students || []);
-      setTotalPages(
-        response.data.total_pages ||
-          Math.ceil((response.data.count || 1) / PAGE_SIZE)
-      );
+      const dataArr = response.data.results || response.data.students || [];
+      setStudents(dataArr);
+      setHasMore(dataArr.length === PAGE_SIZE);
     } else {
       alert(response.message);
     }
@@ -143,9 +142,6 @@ const StudentManagementScreen = () => {
       />
       {/* Paginación */}
       <View style={styles.paginationContainer}>
-        <Text style={styles.paginationText}>
-          Página {currentPage} de {totalPages}
-        </Text>
         <View style={styles.paginationButtons}>
           <Text
             style={[
@@ -159,15 +155,16 @@ const StudentManagementScreen = () => {
           <Text
             style={[
               styles.paginationButton,
-              currentPage === totalPages && styles.paginationButtonDisabled,
+              !hasMore && styles.paginationButtonDisabled,
             ]}
-            onPress={() =>
-              currentPage < totalPages && setCurrentPage(currentPage + 1)
-            }
+            onPress={() => hasMore && setCurrentPage(currentPage + 1)}
           >
             Siguiente
           </Text>
         </View>
+        <Text style={styles.paginationText}>
+          Página {currentPage}
+        </Text>
       </View>
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalBackground}>
