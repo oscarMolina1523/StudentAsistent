@@ -10,6 +10,7 @@ import {
   Button,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { getStudentsBySubjectGrade } from "../services/studentService";
 import { markAttendance } from "../services/attendanceService";
@@ -40,6 +41,7 @@ const StudentDetailsScreen = ({ route }: any) => {
   const [loading, setLoading] = useState(true);
   // Estado para motivos de justificación por estudiante
   const [justificationReasons, setJustificationReasons] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -236,6 +238,7 @@ const StudentDetailsScreen = ({ route }: any) => {
       return;
     }
     try {
+      setSaving(true);
       const now = new Date();
       const fecha = now.toISOString();
       const horaRegistro = now.toTimeString().split(" ")[0];
@@ -260,6 +263,8 @@ const StudentDetailsScreen = ({ route }: any) => {
     } catch (error) {
       Alert.alert("Error", "Ocurrió un error al guardar la asistencia");
       console.error(error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -421,6 +426,14 @@ const StudentDetailsScreen = ({ route }: any) => {
           </View>
         </View>
       </Modal>
+      {saving && (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.7)", zIndex: 10 }}>
+          <View style={{ backgroundColor: "#fff", padding: 30, borderRadius: 16, alignItems: "center" }}>
+            <Text style={{ marginBottom: 10, fontSize: 16, color: "#339999", fontWeight: "bold" }}>Registrando asistencia...</Text>
+            <ActivityIndicator size="large" color="#339999" />
+          </View>
+        </View>
+      )}
     </View>
   );
 };
