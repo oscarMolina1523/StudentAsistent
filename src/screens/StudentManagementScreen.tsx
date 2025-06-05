@@ -15,18 +15,9 @@ import {
   updateStudent,
   deleteStudent,
 } from "../services/studentService";
-import { fetchGrades, Grade } from "../services/gradeService";
+import { fetchGrades } from "../services/gradeService";
 import { Picker } from "@react-native-picker/picker";
-
-interface Student {
-  id: string;
-  nombre: string;
-  apellido: string;
-  gradoId: string;
-  turno: string;
-  fechaNacimiento: string;
-  activo: boolean;
-}
+import { Grade, Student } from "../models/Models";
 
 const PAGE_SIZE = 10;
 
@@ -39,6 +30,7 @@ const StudentManagementScreen = () => {
     id: "",
     nombre: "",
     apellido: "",
+    gender: "",
     gradoId: "",
     turno: "",
     fechaNacimiento: "",
@@ -117,6 +109,7 @@ const StudentManagementScreen = () => {
         id: "",
         nombre: "",
         apellido: "",
+        gender: "",
         gradoId: grades.length > 0 ? grades[0].id : "",
         turno: "",
         fechaNacimiento: "",
@@ -195,6 +188,17 @@ const StudentManagementScreen = () => {
                 setStudentData({ ...studentData, apellido: text })
               }
             />
+            <Picker
+              selectedValue={studentData.gender || ""}
+              onValueChange={(itemValue) =>
+                setStudentData({ ...studentData, gender: itemValue })
+              }
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecciona género" value="" />
+              <Picker.Item label="Masculino" value="Masculino" />
+              <Picker.Item label="Femenino" value="Femenino" />
+            </Picker>
 
             {/* Picker para gradoId */}
             <Picker
