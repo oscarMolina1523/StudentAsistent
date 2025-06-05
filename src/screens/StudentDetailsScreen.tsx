@@ -17,6 +17,7 @@ import { markAttendance } from "../services/attendanceService";
 import { addNotification } from "../services/notificationService";
 import { getMateriaIdByMateriaGradoId } from "../services/subjectServices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
 type Student = {
   id: string;
@@ -42,6 +43,7 @@ const StudentDetailsScreen = ({ route }: any) => {
   // Estado para motivos de justificación por estudiante
   const [justificationReasons, setJustificationReasons] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -240,7 +242,7 @@ const StudentDetailsScreen = ({ route }: any) => {
     try {
       setSaving(true);
       const now = new Date();
-      const fecha = now.toISOString();
+      const fecha = now.toISOString().split('T')[0];
       const horaRegistro = now.toTimeString().split(" ")[0];
       const registradoPor = (await AsyncStorage.getItem("userId")) || "desconocido";
       for (const [studentId, estado] of toSend) {
@@ -248,7 +250,7 @@ const StudentDetailsScreen = ({ route }: any) => {
         const attendanceData = {
           alumnoId: studentId,
           materiaId,
-          fecha,
+          fecha: now.toISOString(),
           estado: typedEstado,
           justificacion: typedEstado === "justificado" ? (justificationReasons[studentId] || "Justificación no especificada") : undefined,
           registradoPor,
@@ -258,7 +260,10 @@ const StudentDetailsScreen = ({ route }: any) => {
         await saveStatusToStorage(studentId, typedEstado, materiaId);
       }
       setStudents((prev) => prev.map((student) => ({ ...student, status: attendanceDraft[student.id] || undefined })));
-      setAttendanceTakenToday(true); // Bloquear toma de asistencia inmediatamente
+      setAttendanceTakenToday(true);
+      // --- Guardar reporte en sesión (local) ---
+      const report = generateAttendanceReport(students, attendanceDraft);
+      await saveReportToSession(materiaId, fecha, report);
       Alert.alert("Éxito", "Asistencia tomada con éxito");
     } catch (error) {
       Alert.alert("Error", "Ocurrió un error al guardar la asistencia");
@@ -266,6 +271,45 @@ const StudentDetailsScreen = ({ route }: any) => {
     } finally {
       setSaving(false);
     }
+  };
+
+  // --- Función para generar el reporte ---
+  type Estado = "presente" | "ausente" | "justificado";
+  interface StudentReport {
+    id: string;
+    nombre: string;
+    apellido: string;
+    gender?: string;
+  }
+  const generateAttendanceReport = (
+    students: StudentReport[],
+    attendanceDraft: Record<string, Estado | null>
+  ) => {
+    let masculino = { presente: 0, ausente: 0, justificado: 0 };
+    let femenino = { presente: 0, ausente: 0, justificado: 0 };
+    let totalPresente = 0, totalAusente = 0, totalJustificado = 0;
+    let total = students.length;
+    students.forEach((student) => {
+      const genero = (student.gender || '').toLowerCase();
+      const estado = attendanceDraft[student.id];
+      if (!estado) return;
+      if (genero === 'masculino') {
+        masculino[estado as Estado]++;
+      } else if (genero === 'femenino') {
+        femenino[estado as Estado]++;
+      }
+      if (estado === 'presente') totalPresente++;
+      if (estado === 'ausente') totalAusente++;
+      if (estado === 'justificado') totalJustificado++;
+    });
+    return {
+      total,
+      masculino,
+      femenino,
+      totalPresente,
+      totalAusente,
+      totalJustificado,
+    };
   };
 
   const imageUrls = {
@@ -529,4 +573,24 @@ const styles = StyleSheet.create({
   },
 });
 
+const REPORTS_KEY = 'attendanceReports';
+
+const saveReportToSession = async (materiaId: string, fecha: string, report: any) => {
+  try {
+    const stored = await AsyncStorage.getItem(REPORTS_KEY);
+    let reports = stored ? JSON.parse(stored) : {};
+    if (!reports[materiaId]) reports[materiaId] = {};
+    reports[materiaId][fecha] = report;
+    await AsyncStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+  } catch (e) { console.error('Error saving report to session', e); }
+};
+
+const getAllReportsFromSession = async () => {
+  try {
+    const stored = await AsyncStorage.getItem(REPORTS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (e) { return {}; }
+};
+
 export default StudentDetailsScreen;
+export { getAllReportsFromSession };
