@@ -48,3 +48,14 @@ export interface TutorStudentRelation {
   alumnoId: string;
   tutorId: string;
 }
+
+export interface Student {
+  id: string;
+  nombre: string;
+  apellido: string;
+  gender: string;
+  gradoId: string;
+  turno: string;
+  fechaNacimiento: string;
+  activo: boolean;
+}
