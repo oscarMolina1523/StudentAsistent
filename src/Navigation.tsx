@@ -16,6 +16,7 @@ import GradeManagementScreen from "./screens/GradeManagementScreen";
 import SubjectManagementScreen from "./screens/SubjectManagementScreen";
 import RelationshipScreen from "./screens/RelationshipScreen";
 import AttendanceChart from "./screens/AttendanceChart";
+import ReportScreen from "./screens/ReportScreen";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -31,6 +32,7 @@ export type RootStackParamList = {
   SubjectsByGradeScreen: { gradeId: string };
   Profile: undefined;
   Notifications: undefined;
+  Report: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -69,12 +71,17 @@ const Navigation = () => {
             headerLeft: () => <MenuModal />,
             headerRight: () => (
               <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+                style={{ flexDirection: "row", alignItems: "center", justifyContent: 'space-around', gap: 8 }}
               >
                 <TouchableOpacity
                   onPress={() => navigation.navigate("Notifications")}
                 >
                   <Ionicons name="notifications" size={28} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("Report")}
+                >
+                  <Ionicons name="flag" size={28} color="white" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("Profile")}
@@ -155,6 +162,13 @@ const Navigation = () => {
           component={NotificationsScreen}
           options={{
             title: "Notificaciones",
+          }}
+        />
+        <Stack.Screen
+          name="Report"
+          component={ReportScreen}
+          options={{
+            title: "Reporte de Asistencia",
           }}
         />
       </Stack.Navigator>
