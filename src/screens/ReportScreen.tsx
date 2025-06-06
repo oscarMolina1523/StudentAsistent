@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { getAllReportsFromSession } from "./StudentDetailsScreen";
-import { getSubjectsByGrade, getGradeById } from "../services/subjectServices";
+import {getSubjectDetails} from "../services/subjectServices";
 
 interface ReportData {
   total: number;
@@ -28,26 +28,16 @@ const ReportScreen = () => {
     fetchReports();
   }, []);
 
-  // Cargar nombres de materia para la lista
+  // Cargar nombres de materia para la lista y detalle usando getSubjectDetails
   useEffect(() => {
     const fetchNombres = async () => {
       const nombres: { [materiaId: string]: string } = {};
       for (const materiaId of Object.keys(reports)) {
-        const fechas = Object.keys(reports[materiaId]);
-        if (fechas.length > 0) {
-          const anyReport = reports[materiaId][fechas[0]];
-          const gradeId = anyReport.gradeId || anyReport.gradoId || anyReport.grade_id || anyReport.grado_id;
-          if (gradeId) {
-            try {
-              const subjects = await getSubjectsByGrade(gradeId);
-              const subject = subjects.find((s: any) => s.id === materiaId || s.materiaId === materiaId);
-              nombres[materiaId] = subject ? subject.nombre : materiaId;
-            } catch {
-              nombres[materiaId] = materiaId;
-            }
-          } else {
-            nombres[materiaId] = materiaId;
-          }
+        try {
+          const subject = await getSubjectDetails(materiaId);
+          nombres[materiaId] = subject?.nombre || materiaId;
+        } catch {
+          nombres[materiaId] = materiaId;
         }
       }
       setMateriaNombres(nombres);
@@ -56,6 +46,10 @@ const ReportScreen = () => {
   }, [reports]);
 
   // Si hay un reporte seleccionado, mostrarlo
+  let materiaNombre = selected?.materiaId;
+  if (selected && materiaNombres[selected.materiaId]) {
+    materiaNombre = materiaNombres[selected.materiaId];
+  }
   if (selected && reports[selected.materiaId] && reports[selected.materiaId][selected.fecha]) {
     const report = reports[selected.materiaId][selected.fecha];
     return (
@@ -64,7 +58,7 @@ const ReportScreen = () => {
           <Text style={{ color: '#007bff', fontWeight: 'bold' }}>{'< Volver a la lista de reportes'}</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Reporte de Asistencia</Text>
-        <Text style={styles.sectionTitle}>Materia: {selected.materiaId}</Text>
+        <Text style={styles.sectionTitle}>Materia: {materiaNombre}</Text>
         <Text style={styles.sectionTitle}>Fecha: {selected.fecha}</Text>
         <Text style={styles.sectionTitle}>Totales Generales</Text>
         <Text style={styles.text}>Total de alumnos: {report.total}</Text>
