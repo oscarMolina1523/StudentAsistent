@@ -11,8 +11,8 @@ export const ProfessorSubjectRelationsList = ({ relations, onEdit }) => (
       renderItem={({ item }) => (
         <View style={styles.itemRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.itemText}>Profesor: {item.profesorNombre}</Text>
-            <Text style={styles.itemText}>Materia: {item.materiaNombre}</Text>
+            <Text style={styles.itemText}>Profesor: {item.profesorId}</Text>
+            <Text style={styles.itemText}>Materia: {item.materiaGradoId}</Text>
             <Text style={styles.itemText}>Turno: {item.turno} | Año: {item.anioEscolar}</Text>
           </View>
           {onEdit && (
