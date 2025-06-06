@@ -13,6 +13,20 @@ export const fetchGrades = async (): Promise<Grade[]> => {
   }
 };
 
+export const getGradeById = async (gradeId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/grades/${gradeId}`);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error('Error al obtener el grado:', error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.detail || 'Error al obtener el grado',
+    };
+  }
+};
+
 // Crear un nuevo grado
 export const createGrade = async (gradeData: Grade): Promise<Grade> => {
   try {
