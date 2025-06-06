@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getUserById } from "../services/userService";
-import {getStudentById} from "../services/studentService";
+import { getStudentById } from "../services/studentService";
 
 export const TutorStudentRelationsList = ({ relations, onEdit }) => {
   const [tutors, setTutors] = useState<Record<string, string>>({});
@@ -30,7 +30,10 @@ export const TutorStudentRelationsList = ({ relations, onEdit }) => {
         if (!alumnsResult[rel.alumnoId]) {
           try {
             const alumn = await getStudentById(rel.alumnoId);
-            alumnsResult[rel.alumnoId] = (alumn && alumn.success && alumn.data && alumn.data.nombre) ? alumn.data.nombre : "Desconocido";
+            alumnsResult[rel.alumnoId] =
+              alumn && alumn.success && alumn.data
+                ? `${alumn.data.nombre} ${alumn.data.apellido}`
+                : "Desconocido";
           } catch {
             alumnsResult[rel.alumnoId] = "Desconocido";
           }
@@ -52,8 +55,12 @@ export const TutorStudentRelationsList = ({ relations, onEdit }) => {
         renderItem={({ item }) => (
           <View style={styles.itemRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.itemText}>Tutor: {tutors[item.tutorId] || "Cargando..."}</Text>
-              <Text style={styles.itemText}>Alumno: {alumns[item.alumnoId] || "Cargando..."}</Text>
+              <Text style={styles.itemText}>
+                Tutor: {tutors[item.tutorId] || "Cargando..."}
+              </Text>
+              <Text style={styles.itemText}>
+                Alumno: {alumns[item.alumnoId] || "Cargando..."}
+              </Text>
             </View>
             {onEdit && (
               <TouchableOpacity onPress={() => onEdit(item)}>
