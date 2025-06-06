@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { getUserById } from '../services/userService';
+import {getSubjectDetails} from '../services/subjectServices';
 
 export const ProfessorSubjectRelationsList = ({ relations, onEdit }) => {
   const [professors, setProfessors] = useState({});
+  const [subjects, setSubjects] = useState({});
 
   useEffect(() => {
     const fetchProfessors = async () => {
