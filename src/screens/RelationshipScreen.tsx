@@ -122,7 +122,7 @@ const RelationshipScreen = () => {
     }
   };
 
-  const fetchGradeSubjectRelations = async (gradoId) => {
+  const fetchGradeSubjectRelations = async (gradoId_: any) => {
     try {
       const subjects = await getSubjectsByGrade(gradoId); // ← usa tu función ya lista
       const formatted = subjects.map((s) => ({
