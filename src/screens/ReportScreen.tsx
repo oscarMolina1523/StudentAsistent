@@ -32,15 +32,20 @@ const ReportScreen = () => {
   useEffect(() => {
     const fetchNombres = async () => {
       const nombres: { [materiaId: string]: string } = {};
+      const validReports: any = {};
       for (const materiaId of Object.keys(reports)) {
         try {
           const subject = await getSubjectDetails(materiaId);
-          nombres[materiaId] = subject?.nombre || materiaId;
+          if (subject?.nombre) {
+            nombres[materiaId] = subject.nombre;
+            validReports[materiaId] = reports[materiaId];
+          }
         } catch {
-          nombres[materiaId] = materiaId;
+          // Si da error (404), no agregamos el materiaId a nombres ni a validReports
         }
       }
       setMateriaNombres(nombres);
+      setReports(validReports); // Limpia los reportes inválidos
     };
     if (Object.keys(reports).length > 0) fetchNombres();
   }, [reports]);
