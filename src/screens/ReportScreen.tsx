@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { getAllReportsFromSession } from "./StudentDetailsScreen";
+import { useAttendanceReport } from "../contexts/AttendanceReportContext";
 import {getSubjectDetails} from "../services/subjectServices";
 
 interface ReportData {
@@ -13,77 +13,105 @@ interface ReportData {
 }
 
 const ReportScreen = () => {
-  const [reports, setReports] = useState<any>({});
+  const { reports } = useAttendanceReport();
   const [selected, setSelected] = useState<{ materiaId: string; fecha: string } | null>(null);
-  const [loading, setLoading] = useState(true);
   const [materiaNombres, setMateriaNombres] = useState<{ [materiaId: string]: string }>({});
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      setLoading(true);
-      const all = await getAllReportsFromSession();
-      setReports(all);
-      setLoading(false);
-    };
-    fetchReports();
-  }, []);
+  // Unificar materias y fechas
+  type FlatReport = {
+    materiaId: string;
+    fecha: string;
+    report: ReportData;
+  };
+  const flatReports: FlatReport[] = [];
+  for (const materiaId of Object.keys(reports)) {
+    for (const fecha of Object.keys(reports[materiaId] || {})) {
+      const report = reports[materiaId][fecha];
+      // Validar que el reporte tenga la estructura correcta
+      if (
+        report &&
+        typeof report.total === 'number' &&
+        report.masculino && typeof report.masculino.presente === 'number' &&
+        report.femenino && typeof report.femenino.presente === 'number'
+      ) {
+        flatReports.push({ materiaId, fecha, report });
+      }
+    }
+  }
 
   // Cargar nombres de materia para la lista y detalle usando getSubjectDetails
   useEffect(() => {
     const fetchNombres = async () => {
       const nombres: { [materiaId: string]: string } = {};
-      const validReports: any = {};
-      for (const materiaId of Object.keys(reports)) {
-        try {
-          const subject = await getSubjectDetails(materiaId);
-          if (subject?.nombre) {
-            nombres[materiaId] = subject.nombre;
-            validReports[materiaId] = reports[materiaId];
+      for (const rep of flatReports) {
+        if (!nombres[rep.materiaId]) {
+          try {
+            const subject = await getSubjectDetails(rep.materiaId);
+            if (subject?.nombre) {
+              nombres[rep.materiaId] = subject.nombre;
+            }
+          } catch (e) {
+            // Si da error (404), no agregamos el materiaId a nombres
+            // Opcional: puedes poner el materiaId como fallback
+            nombres[rep.materiaId] = rep.materiaId;
           }
-        } catch {
-          // Si da error (404), no agregamos el materiaId a nombres ni a validReports
         }
       }
       setMateriaNombres(nombres);
-      setReports(validReports); // Limpia los reportes inválidos
+      setLoading(false);
     };
-    if (Object.keys(reports).length > 0) fetchNombres();
+    setLoading(true);
+    if (flatReports.length > 0) fetchNombres();
+    else setLoading(false);
   }, [reports]);
 
-  // Si hay un reporte seleccionado, mostrarlo
-  let materiaNombre = selected?.materiaId;
-  if (selected && materiaNombres[selected.materiaId]) {
-    materiaNombre = materiaNombres[selected.materiaId];
-  }
-  if (selected && reports[selected.materiaId] && reports[selected.materiaId][selected.fecha]) {
-    const report = reports[selected.materiaId][selected.fecha];
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity onPress={() => setSelected(null)} style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#007bff', fontWeight: 'bold' }}>{'< Volver a la lista de reportes'}</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Reporte de Asistencia</Text>
-        <Text style={styles.sectionTitle}>Materia: {materiaNombre}</Text>
-        <Text style={styles.sectionTitle}>Fecha: {selected.fecha}</Text>
-        <Text style={styles.sectionTitle}>Totales Generales</Text>
-        <Text style={styles.text}>Total de alumnos: {report.total}</Text>
-        <Text style={styles.text}>Presentes: {report.totalPresente}</Text>
-        <Text style={styles.text}>Ausentes: {report.totalAusente}</Text>
-        <Text style={styles.text}>Justificados: {report.totalJustificado}</Text>
-        <Text style={styles.sectionTitle}>Por Género</Text>
-        <Text style={styles.subTitle}>Masculino</Text>
-        <Text style={styles.text}>Presentes: {report.masculino.presente}</Text>
-        <Text style={styles.text}>Ausentes: {report.masculino.ausente}</Text>
-        <Text style={styles.text}>Justificados: {report.masculino.justificado}</Text>
-        <Text style={styles.subTitle}>Femenino</Text>
-        <Text style={styles.text}>Presentes: {report.femenino.presente}</Text>
-        <Text style={styles.text}>Ausentes: {report.femenino.ausente}</Text>
-        <Text style={styles.text}>Justificados: {report.femenino.justificado}</Text>
-      </ScrollView>
+  // Mostrar detalle de reporte seleccionado
+  if (selected) {
+    const found = flatReports.find(
+      (r) => r.materiaId === selected.materiaId && r.fecha === selected.fecha
     );
+    if (found) {
+      const materiaNombre = materiaNombres[found.materiaId] || found.materiaId;
+      const report = found.report;
+      // Validar que el reporte tenga la estructura correcta antes de mostrar
+      if (!report || !report.masculino || !report.femenino) {
+        return (
+          <View style={styles.container}>
+            <Text style={styles.title}>Reporte inválido o incompleto.</Text>
+            <TouchableOpacity onPress={() => setSelected(null)} style={{ marginTop: 20 }}>
+              <Text style={{ color: '#007bff', fontWeight: 'bold' }}>{'< Volver a la lista de reportes'}</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+      return (
+        <ScrollView contentContainerStyle={styles.container}>
+          <TouchableOpacity onPress={() => setSelected(null)} style={{ marginBottom: 16 }}>
+            <Text style={{ color: '#007bff', fontWeight: 'bold' }}>{'< Volver a la lista de reportes'}</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Reporte de Asistencia</Text>
+          <Text style={styles.sectionTitle}>Materia: {materiaNombre}</Text>
+          <Text style={styles.sectionTitle}>Fecha: {found.fecha}</Text>
+          <Text style={styles.sectionTitle}>Totales Generales</Text>
+          <Text style={styles.text}>Total de alumnos: {report.total ?? 0}</Text>
+          <Text style={styles.text}>Presentes: {report.totalPresente ?? 0}</Text>
+          <Text style={styles.text}>Ausentes: {report.totalAusente ?? 0}</Text>
+          <Text style={styles.text}>Justificados: {report.totalJustificado ?? 0}</Text>
+          <Text style={styles.sectionTitle}>Por Género</Text>
+          <Text style={styles.subTitle}>Masculino</Text>
+          <Text style={styles.text}>Presentes: {report.masculino.presente ?? 0}</Text>
+          <Text style={styles.text}>Ausentes: {report.masculino.ausente ?? 0}</Text>
+          <Text style={styles.text}>Justificados: {report.masculino.justificado ?? 0}</Text>
+          <Text style={styles.subTitle}>Femenino</Text>
+          <Text style={styles.text}>Presentes: {report.femenino.presente ?? 0}</Text>
+          <Text style={styles.text}>Ausentes: {report.femenino.ausente ?? 0}</Text>
+          <Text style={styles.text}>Justificados: {report.femenino.justificado ?? 0}</Text>
+        </ScrollView>
+      );
+    }
   }
 
-  // Mostrar lista de reportes
   if (loading) {
     return (
       <View style={styles.container}>
@@ -92,8 +120,7 @@ const ReportScreen = () => {
     );
   }
 
-  const materiaIds = Object.keys(reports);
-  if (materiaIds.length === 0) {
+  if (flatReports.length === 0) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>No hay reportes de asistencia en esta sesión.</Text>
@@ -101,28 +128,25 @@ const ReportScreen = () => {
     );
   }
 
+  // Mostrar lista de todos los reportes (agrupados por materia y fecha)
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Reportes de Asistencia</Text>
-      {materiaIds.map((materiaId) => (
-        <View key={materiaId} style={{ width: '100%' }}>
+      {flatReports.map((rep, idx) => (
+        <TouchableOpacity
+          key={rep.materiaId + rep.fecha + idx}
+          style={{ backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#ddd', width: '100%' }}
+          onPress={() => setSelected({ materiaId: rep.materiaId, fecha: rep.fecha })}
+        >
           <Text style={styles.sectionTitle}>
-            Materia: {typeof materiaNombres[materiaId] === 'string' ? materiaNombres[materiaId] : materiaId}
+            Materia: {materiaNombres[rep.materiaId] || rep.materiaId}
           </Text>
-          {Object.keys(reports[materiaId]).map((fecha) => (
-            <TouchableOpacity
-              key={fecha}
-              style={{ backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 10, borderWidth: 1, borderColor: '#ddd' }}
-              onPress={() => setSelected({ materiaId, fecha })}
-            >
-              <Text style={{ fontWeight: 'bold' }}>Fecha: {fecha}</Text>
-              <Text style={styles.text}>Total: {reports[materiaId][fecha].total}</Text>
-              <Text style={styles.text}>Presentes: {reports[materiaId][fecha].totalPresente}</Text>
-              <Text style={styles.text}>Ausentes: {reports[materiaId][fecha].totalAusente}</Text>
-              <Text style={styles.text}>Justificados: {reports[materiaId][fecha].totalJustificado}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <Text style={{ fontWeight: 'bold' }}>Fecha: {rep.fecha}</Text>
+          <Text style={styles.text}>Total: {rep.report.total ?? 0}</Text>
+          <Text style={styles.text}>Presentes: {rep.report.totalPresente ?? 0}</Text>
+          <Text style={styles.text}>Ausentes: {rep.report.totalAusente ?? 0}</Text>
+          <Text style={styles.text}>Justificados: {rep.report.totalJustificado ?? 0}</Text>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );

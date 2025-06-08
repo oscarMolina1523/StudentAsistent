@@ -3,6 +3,7 @@ import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { View, ActivityIndicator } from 'react-native';
 import Navigation from './src/Navigation';
+import { AttendanceReportProvider } from './src/contexts/AttendanceReportContext';
 
 export default function App(): JSX.Element {
   const [fontsLoaded, setFontsLoaded] = useState<boolean>(false);
@@ -26,5 +27,9 @@ export default function App(): JSX.Element {
     );
   }
 
-  return <Navigation />;
+  return (
+    <AttendanceReportProvider>
+      <Navigation />
+    </AttendanceReportProvider>
+  );
 }

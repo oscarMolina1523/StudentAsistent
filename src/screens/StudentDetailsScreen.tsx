@@ -18,6 +18,7 @@ import { addNotification } from "../services/notificationService";
 import { getMateriaIdByMateriaGradoId } from "../services/subjectServices";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import { useAttendanceReport } from "../contexts/AttendanceReportContext";
 
 type Student = {
   id: string;
@@ -44,6 +45,7 @@ const StudentDetailsScreen = ({ route }: any) => {
   const [justificationReasons, setJustificationReasons] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const navigation = useNavigation<any>();
+  const { saveReport } = useAttendanceReport();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -106,11 +108,7 @@ const StudentDetailsScreen = ({ route }: any) => {
   ) => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const key = `statuses:${materiaId}:${today}`;
-      const storedStatuses = await AsyncStorage.getItem(key);
-      const parsedStatuses = storedStatuses ? JSON.parse(storedStatuses) : {};
-      parsedStatuses[studentId] = status;
-      await AsyncStorage.setItem(key, JSON.stringify(parsedStatuses));
+      saveReport(materiaId, today, generateAttendanceReport(students, attendanceDraft));
     } catch (error) {
       console.error("Error saving status to storage:", error);
     }
@@ -265,7 +263,6 @@ const StudentDetailsScreen = ({ route }: any) => {
       const report = generateAttendanceReport(students, attendanceDraft);
       // Guardar bajo reports[gradeId][materiaId][fecha]
       const gradeId = route.params.gradeId || "sin-grado";
-      await saveReportToSession(gradeId, materiaId, fecha, report);
       Alert.alert("Éxito", "Asistencia tomada con éxito");
     } catch (error) {
       Alert.alert("Error", "Ocurrió un error al guardar la asistencia");
@@ -575,25 +572,4 @@ const styles = StyleSheet.create({
   },
 });
 
-const REPORTS_KEY = 'attendanceReports';
-
-const saveReportToSession = async (gradeId: string, materiaId: string, fecha: string, report: any) => {
-  try {
-    const stored = await AsyncStorage.getItem(REPORTS_KEY);
-    let reports = stored ? JSON.parse(stored) : {};
-    if (!reports[gradeId]) reports[gradeId] = {};
-    if (!reports[gradeId][materiaId]) reports[gradeId][materiaId] = {};
-    reports[gradeId][materiaId][fecha] = report;
-    await AsyncStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
-  } catch (e) { console.error('Error saving report to session', e); }
-};
-
-const getAllReportsFromSession = async () => {
-  try {
-    const stored = await AsyncStorage.getItem(REPORTS_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch (e) { return {}; }
-};
-
 export default StudentDetailsScreen;
-export { getAllReportsFromSession };
